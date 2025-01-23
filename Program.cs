@@ -1,51 +1,52 @@
-﻿using NetCordSampler.Builder;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-var footer = new EmbedSample.FooterSample
-{
-    Text = "Text",
-    IconUrl = "https://example.com/embed/footer.png",
-};
-var footerCode = footer.Build();
-Console.WriteLine($"var footer = {footerCode}");
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Hosting.Gateway;
+using NetCord.Hosting.Rest;
+using NetCord.Hosting.Services;
+using NetCord.Hosting.Services.ApplicationCommands;
+using NetCord.Hosting.Services.ComponentInteractions;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.ComponentInteractions;
 
-var author = new EmbedSample.AuthorSample
-{
-    Name = "Name",
-    Url = "https://example.com/author/url",
-    IconUrl = "https://example.com/author/icon.png",
-};
-var authorCode = author.Build();
-Console.WriteLine($"var author = {authorCode}");
+using NetCordSampler;
+using NetCordSampler.CodeSamples.Rest;
 
-var field = new EmbedSample.FieldSample();
-var fieldCode = field.Build();
-Console.WriteLine($"var field = {fieldCode}");
+var builder = Host.CreateApplicationBuilder(args);
 
-var embed = new EmbedSample
-{
-    Title = "Title of the embed",
-    Description = "Description of the embed",
-    Url = "https://example.com",
-    Color = 0xFF0000,
-    ImageUrl = "https://example.com/embed/image.png",
-    ThumbnailUrl = "https://example.com/embed/thumbnail.png",
-    Timestamp = "DateTimeOffset.UtcNow",
-    Author = new EmbedSample.AuthorSample
+builder.Services
+    .AddOptions<Configuration>()
+    .Bind(builder.Configuration)
+    .ValidateDataAnnotations();
+
+builder.Services
+    .AddHttpClient();
+
+builder.Services
+    .AddApplicationCommands<ApplicationCommandInteraction, ApplicationCommandContext>()
+    .AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>()
+    .AddComponentInteractions<StringMenuInteraction, StringMenuInteractionContext>();
+
+builder.Services
+    .AddDiscordRest()
+    .AddDiscordGateway(options =>
     {
-        Name = "Name",
-        Url = "https://example.com/author/url",
-        IconUrl = "https://example.com/embed/author/icon.png",
-    },
-    Footer = new EmbedSample.FooterSample
-    {
-        Text = "Text",
-        IconUrl = "https://example.com/embed/footer.png",
-    }
-};
+        options.Intents =
+            GatewayIntents.GuildMessages |
+            GatewayIntents.GuildMessageReactions |
+            GatewayIntents.MessageContent;
+    });
 
-embed.AddField("Field1", "Value1", true)
-     .AddField("Field2", "Value2");
+builder.Services
+    .AddLogging(configure => configure
+        .AddConsole()
+        .SetMinimumLevel(LogLevel.Debug));
 
-var embedCode = embed.Build();
-Console.WriteLine($"var embed = {embedCode}");
-Console.WriteLine($"var embed = {EmbedSample.QuickBuild()}");
+var host = builder.Build()
+    .AddModules(typeof(Program).Assembly)
+    .UseGatewayEventHandlers();
+
+await host.RunAsync();
