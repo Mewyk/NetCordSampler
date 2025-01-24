@@ -13,10 +13,13 @@ A Discord bot that generates and displays various example code snippets of NetCo
 - Pictures alongside the general information of the various Discord components/etc that you can select for samples.
 - Samples that cover both Classic Syntax and Fluent Syntax.
 
-### Message (NetCord.Rest)
+### NetCord.Rest (Category)
+> ### **SubCategory:** Message
+> - **Object:** *NetCord.Rest.MessageProperties*
+> ### **Overview**
 > This group/category covers the creation side of message objects that are built and sent to Discord. As of now, the "Read" side of message data will be part another group/category and interaction objects will be covered in the Interaction group/category.  
->  
-> ***Note***: The list below is currently incomplete for this initial concept, but will eventually be expanded on and revised.
+> ### **Note**
+> The list below is currently incomplete for this initial concept, but will eventually be expanded on and revised.
 ```Bash
 Embed (Object: EmbedProperties)
 ├─ Title

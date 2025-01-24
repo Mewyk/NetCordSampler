@@ -1,51 +1,110 @@
-﻿using NetCordSampler.Builder;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-var footer = new EmbedSample.FooterSample
-{
-    Text = "Text",
-    IconUrl = "https://example.com/embed/footer.png",
-};
-var footerCode = footer.Build();
-Console.WriteLine($"var footer = {footerCode}");
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Hosting.Gateway;
+using NetCord.Hosting.Rest;
+using NetCord.Hosting.Services;
+using NetCord.Hosting.Services.ApplicationCommands;
+using NetCord.Hosting.Services.ComponentInteractions;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
+using NetCord.Services.ComponentInteractions;
 
-var author = new EmbedSample.AuthorSample
-{
-    Name = "Name",
-    Url = "https://example.com/author/url",
-    IconUrl = "https://example.com/author/icon.png",
-};
-var authorCode = author.Build();
-Console.WriteLine($"var author = {authorCode}");
+using NetCordSampler;
+using NetCordSampler.CodeSamples.Rest;
+using NetCordSampler.Interfaces;
 
-var field = new EmbedSample.FieldSample();
-var fieldCode = field.Build();
-Console.WriteLine($"var field = {fieldCode}");
+var builder = Host.CreateApplicationBuilder(args);
 
-var embed = new EmbedSample
-{
-    Title = "Title of the embed",
-    Description = "Description of the embed",
-    Url = "https://example.com",
-    Color = 0xFF0000,
-    ImageUrl = "https://example.com/embed/image.png",
-    ThumbnailUrl = "https://example.com/embed/thumbnail.png",
-    Timestamp = "DateTimeOffset.UtcNow",
-    Author = new EmbedSample.AuthorSample
+builder.Services
+    .AddOptions<Configuration>()
+    .Bind(builder.Configuration)
+    .ValidateDataAnnotations();
+
+builder.Services
+    .AddHttpClient();
+
+builder.Services
+    .AddApplicationCommands<ApplicationCommandInteraction, ApplicationCommandContext>()
+    .AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>()
+    .AddComponentInteractions<StringMenuInteraction, StringMenuInteractionContext>();
+
+builder.Services
+    .AddDiscordRest()
+    .AddDiscordGateway(options =>
     {
-        Name = "Name",
-        Url = "https://example.com/author/url",
-        IconUrl = "https://example.com/embed/author/icon.png",
-    },
-    Footer = new EmbedSample.FooterSample
+        options.Intents =
+            GatewayIntents.GuildMessages |
+            GatewayIntents.GuildMessageReactions |
+            GatewayIntents.MessageContent;
+    });
+
+builder.Services
+    .AddLogging(configure => configure
+        .AddConsole()
+        .SetMinimumLevel(LogLevel.Debug));
+
+builder.Services.AddSingleton<EmbedCodeSample>();
+builder.Services.AddSingleton<EmbedAuthorCodeSample>();
+builder.Services.AddSingleton<EmbedFooterCodeSample>();
+builder.Services.AddSingleton<EmbedFieldCodeSample>();
+
+var host = builder.Build()
+    .AddModules(typeof(Program).Assembly)
+    .UseGatewayEventHandlers();
+
+var sampleBuilder = host.Services.GetRequiredService<EmbedCodeSample>();
+await GenerateExamples(sampleBuilder);
+
+await host.RunAsync();
+
+// NOTE: Below is just temporary for quick testing purposes
+static async Task GenerateExamples(ICodeSample codeSample)
+{
+    // Simple custom embed code sample (few options used)
+    var simpleCustomEmbed = new EmbedProperties
     {
-        Text = "Text",
-        IconUrl = "https://example.com/embed/footer.png",
-    }
-};
+        Title = "Simple custom embed title",
+        Description = "Simple custom embed code sample description text"
+    };
+    Console.WriteLine("Simple Embed Output:");
+    Console.WriteLine(await Task.Run(() => codeSample.BuildCodeSample(simpleCustomEmbed)));
 
-embed.AddField("Field1", "Value1", true)
-     .AddField("Field2", "Value2");
+    // Full custom embed code sample 
+    var fullCustomEmbed = new EmbedProperties
+    {
+        Title = "Full custom embed title",
+        Description = "Full custom embed code sample description text",
+        Color = new(0xFF0000),
+        Timestamp = DateTimeOffset.UtcNow,
+        Image = "https://example.com/image.png",
+        Thumbnail = "https://example.com/thumbnail.png",
+        Url = "https://example.com",
+        Author = new EmbedAuthorProperties
+        {
+            Name = "Author Name",
+            IconUrl = "https://example.com/icon.png",
+            Url = "https://example.com"
+        },
+        Footer = new EmbedFooterProperties
+        {
+            Text = "Footer Text",
+            IconUrl = "https://example.com/icon.png"
+        },
+        Fields =
+        [
+            new() { Name = "Field One", Value = "Value One", Inline = true },
+            new() { Name = "Field Two", Value = "Value Two"}
+        ]
+    };
+    Console.WriteLine("\nFull Embed Output:");
+    Console.WriteLine(await Task.Run(() => codeSample.BuildCodeSample(fullCustomEmbed)));
 
-var embedCode = embed.Build();
-Console.WriteLine($"var embed = {embedCode}");
-Console.WriteLine($"var embed = {EmbedSample.QuickBuild()}");
+    // QuickBuild (full auto code samples)
+    // Uses default values and does not allow any custom values
+    Console.WriteLine("\nQuickBuild Embed Output:");
+    Console.WriteLine(await Task.Run(() => codeSample.QuickBuild(typeof(EmbedProperties))));
+}
