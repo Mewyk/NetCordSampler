@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using NetCord;
 using NetCord.Gateway;
 using NetCord.Hosting.Gateway;
-using NetCord.Hosting.Rest;
 using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
 using NetCord.Hosting.Services.ComponentInteractions;
@@ -33,7 +32,6 @@ builder.Services
     .AddComponentInteractions<StringMenuInteraction, StringMenuInteractionContext>();
 
 builder.Services
-    .AddDiscordRest()
     .AddDiscordGateway(options =>
     {
         options.Intents =
