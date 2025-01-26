@@ -1,5 +1,3 @@
-using System;
-
 namespace NetCordSampler.Utilities;
 
 [AttributeUsage(AttributeTargets.Field)]

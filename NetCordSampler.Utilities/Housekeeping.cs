@@ -2,7 +2,7 @@
 
 namespace NetCordSampler.Utilities;
 
-public class Housekeeping
+public static class Housekeeping
 {
     public static string ParseXmlComment(string input)
     {
@@ -10,7 +10,11 @@ public class Housekeeping
         processedInput = CleanXmlTags(processedInput);
         processedInput = CleanSummaryXml(processedInput);
 
-        return processedInput.Trim();
+        // Because line breaks in comments are not caught by Split
+        return processedInput
+            .Replace("\n", string.Empty)
+            .Replace("\r", string.Empty)
+            .Trim();
     }
 
     public static string ProcessLines(string input)
@@ -18,15 +22,10 @@ public class Housekeeping
         var result = new StringBuilder();
         string[] lines = input.Split(
             ["\r\n", "\r", "\n"],
-            StringSplitOptions.None);
+            StringSplitOptions.RemoveEmptyEntries);
 
         foreach (string line in lines)
         {
-            if (string.IsNullOrWhiteSpace(line)) continue;
-            if (line.Contains("\r\n")) continue;
-            if (line.Contains('\r')) continue;
-            if (line.Contains('\n')) continue;
-
             result.AppendLine(line);
         }
 
@@ -45,4 +44,9 @@ public class Housekeeping
 
     public static string CleanSummaryXml(string input) =>
         input.Replace("///", string.Empty);
+
+    public static string CleanFileName(string fileName) =>
+        fileName.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+            ? fileName[..^3]
+            : fileName;
 }

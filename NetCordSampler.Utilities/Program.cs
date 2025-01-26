@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using System.Collections.Concurrent;
+﻿using System.Collections.Immutable;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,74 +9,72 @@ namespace NetCordSampler.Utilities;
 internal static class Program
 {
     private static readonly HttpClient httpClient = new();
-    private static readonly JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
 
     public static async Task Main()
     {
-        var fileNamesPath = Path.Combine(AppContext.BaseDirectory, "NetcordRestSourceFIles.txt");
-        var jsonFilePath = Path.Combine(AppContext.BaseDirectory, "NetcordRestSourceFiles.json");
-        var enumsOutputPath = Path.Combine(AppContext.BaseDirectory, "GeneratedEnums.cs");
+        var fileNamesPath = Path.Combine(AppContext.BaseDirectory, "NetcordRestSourceFiles.txt");
+        var enumsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestEnumeration.cs");
+        var collectionsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestImmutable.cs");
 
         var fileNames = await File.ReadAllLinesAsync(fileNamesPath);
-        var allSummaries = await CollectAllSummariesAsync(fileNames);
+        var cleanedData = await GetCleanSummariesAsync(fileNames);
 
-        foreach (var (fileName, summaries) in allSummaries)
-        {
-            Console.WriteLine($"File: {fileName}");
-            foreach (var (propertyName, summary) in summaries)
-                Console.WriteLine($"\t{propertyName}: {summary}");
-        }
+        var summaries = cleanedData
+            .Where(keyValuePair => keyValuePair.Value.Count > 0)
+            .ToImmutableDictionary(
+                keyValuePair => keyValuePair.Key,
+                keyValuePair => keyValuePair.Value);
 
-        // Serialize to a json file
-        var json = JsonSerializer.Serialize(allSummaries, jsonOptions);
-        await File.WriteAllTextAsync(jsonFilePath, json);
+        // Enum
+        var enumSourceCode = SourceGenerator.GenerateEnum(summaries);
+        File.WriteAllText(enumsOutputPath, enumSourceCode);
 
-        // Generate enums
-        var jsonContent = SourceGenerator.ParseJsonFile(jsonFilePath);
-        var generatedCode = SourceGenerator.GenerateEnum(jsonContent);
-
-        // Save to a class file
-        Directory.CreateDirectory(Path.GetDirectoryName(enumsOutputPath)!);
-        File.WriteAllText(enumsOutputPath, generatedCode);
+        // Immutable
+        var immutableSourceCode = SourceGenerator.GenerateImmutableSourceCode(summaries);
+        File.WriteAllText(collectionsOutputPath, immutableSourceCode);
     }
 
-    // Temporary
-    private static async Task<ConcurrentDictionary<string, ConcurrentDictionary<string, string>>>
-        CollectAllSummariesAsync(IEnumerable<string> fileNames)
+    private static async Task<ImmutableDictionary<string, ImmutableDictionary<string, string>>> GetCleanSummariesAsync(IEnumerable<string> fileNames)
     {
-        var summariesDictionary = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>();
-        var downloadTasks = fileNames.Select(async fileName =>
+        var netcordSourceFiles = fileNames.Select(async fileName =>
         {
             var sourceCode = await DownloadFileAsync(fileName);
             if (sourceCode != null)
             {
-                var summaries = ExtractSummaries(sourceCode);
-                summariesDictionary[fileName] = summaries;
+                return KeyValuePair.Create(
+                    Housekeeping.CleanFileName(fileName), 
+                    ExtractSummaries(sourceCode));
             }
+            else return default;
         });
-        await Task.WhenAll(downloadTasks);
+
+        var results = await Task.WhenAll(netcordSourceFiles);
+
+        var summariesDictionary = results
+            .Where(result => !string.IsNullOrEmpty(result.Key) && result.Value is not null)
+            .ToImmutableDictionary(result => result.Key, result => result.Value);
+
         return summariesDictionary;
     }
 
     private static async Task<string?> DownloadFileAsync(string fileName)
     {
         var url = $"https://raw.githubusercontent.com/NetCordDev/NetCord/alpha/NetCord/Rest/{fileName}";
-        Console.WriteLine(url);
         try
         {
-            var content = await httpClient.GetStringAsync(url);
-            return content;
+            return await httpClient.GetStringAsync(url);
         }
-        catch (HttpRequestException httpRequestException) when (httpRequestException.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (HttpRequestException httpRequestException)
+            when (httpRequestException.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             Console.WriteLine($"File not found: {url}");
             return null;
         }
     }
 
-    private static ConcurrentDictionary<string, string> ExtractSummaries(string sourceCode)
+    private static ImmutableDictionary<string, string> ExtractSummaries(string sourceCode)
     {
-        var result = new ConcurrentDictionary<string, string>();
+        var builder = ImmutableDictionary.CreateBuilder<string, string>();
 
         // Source parsed to a syntax tree
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
@@ -89,8 +86,11 @@ internal static class Program
         var propertyDeclarations = rootNode.DescendantNodes().OfType<PropertyDeclarationSyntax>();
         foreach (var propertyDeclaration in propertyDeclarations)
         {
-            // Get the leading trivia associated with the property
-            var sourceCodeSummary = propertyDeclaration.GetLeadingTrivia()
+            // Extract the summary comment
+            var summaryText = propertyDeclaration
+
+                // Get the leading trivia
+                .GetLeadingTrivia()
 
                 // Select the structure
                 .Select(trivia => trivia.GetStructure())
@@ -107,15 +107,11 @@ internal static class Program
                 // Clean excess comment syntax and format/adjust its contents
                 .Select(element => Housekeeping.ParseXmlComment(element.Content.ToString()))
                 .FirstOrDefault();
-
-            // Add the processed summary string to the master dictionary
-            if (!string.IsNullOrEmpty(sourceCodeSummary))
-            {
-                result[propertyDeclaration.Identifier.Text] = sourceCodeSummary;
-                Console.WriteLine(sourceCodeSummary); // Temporary
-            }
+            
+            if (!string.IsNullOrEmpty(summaryText))
+                builder[propertyDeclaration.Identifier.Text] = summaryText;
         }
 
-        return result;
+        return builder.ToImmutable();
     }
 }

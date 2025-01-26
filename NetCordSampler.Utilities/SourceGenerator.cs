@@ -1,54 +1,93 @@
 using System.Text;
-using System.Text.Json;
+using System.Collections.Immutable;
 
 namespace NetCordSampler.Utilities;
 
-public class SourceGenerator
+public static class SourceGenerator
 {
-    public static string GenerateEnum(Dictionary<string, Dictionary<string, string>> jsonContent)
+    public static string GenerateEnum(ImmutableDictionary<string, ImmutableDictionary<string, string>> data)
     {
-        var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("namespace NetCordSampler.Enums;");
-        stringBuilder.AppendLine();
-        stringBuilder.AppendLine("public class RestEnums");
-        stringBuilder.AppendLine("{");
+        var sourceBuilder = new StringBuilder()
+            .AppendLine("namespace NetCordSampler.Enums;")
+            .AppendLine()
+            .AppendLine("public static class RestEnums")
+            .AppendLine("{");
 
-        foreach (var (fileName, properties) in jsonContent)
+        var enumDefinitions = data
+            .Where(keyValuePair => keyValuePair.Value.Count > 0)
+            .Select(keyValuePair => BuildMainEnum(keyValuePair.Key, keyValuePair.Value))
+            .ToList();
+
+        foreach (var enumDefinition in enumDefinitions)
+            sourceBuilder.AppendLine(enumDefinition);
+
+
+        if (enumDefinitions.Count > 0)
         {
-            if (properties == null || properties.Count == 0)
-                continue;
-
-            var enumName = fileName.Replace(".cs", "");
-            stringBuilder.AppendLine($"\tpublic enum {enumName}");
-            stringBuilder.AppendLine("\t{");
-
-            var propertyCount = properties.Count;
-            var currentIndex = 0;
-
-            foreach (var (propertyName, description) in properties)
-            {
-                var cleanDescription = Housekeeping.ParseXmlComment(description);
-                stringBuilder.AppendLine($"\t\t[Summary(\"{cleanDescription}\")]");
-                stringBuilder.Append($"\t\t{propertyName}");
-
-                if (++currentIndex < propertyCount)
-                    stringBuilder.AppendLine(",");
-                else
-                    stringBuilder.AppendLine();
-            }
-
-            stringBuilder.AppendLine("\t}");
-            stringBuilder.AppendLine();
+            var masterEnum = BuildMasterEnum(data.Keys);
+            sourceBuilder.AppendLine(masterEnum);
         }
 
-        stringBuilder.AppendLine("}");
-        return stringBuilder.ToString();
+        sourceBuilder.AppendLine("}");
+
+        return sourceBuilder.ToString();
     }
 
-    public static Dictionary<string, Dictionary<string, string>> ParseJsonFile(string filePath)
+    public static string GenerateImmutableSourceCode(ImmutableDictionary<string, ImmutableDictionary<string, string>> data)
     {
-        var jsonContent = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<
-            Dictionary<string, Dictionary<string, string>>>(jsonContent) ?? [];
+        // TODO: Handle this properly
+        if (data.IsEmpty)
+            return string.Empty;
+
+        var ImmutableBuilder = new StringBuilder()
+            .AppendLine("using System.Collections.Immutable;")
+            .AppendLine()
+            .AppendLine("namespace NetCordSampler.ImmutableCollections;")
+            .AppendLine()
+            .AppendLine("public static class RestImmutableCollections")
+            .AppendLine("{")
+            .AppendLine("\tpublic static readonly ImmutableDictionary<string, ImmutableArray<string>> Collections =")
+            .AppendLine("\t\tImmutableDictionary.Create<string, ImmutableArray<string>>()");
+
+        var lastKey = data.Keys.Last();
+        foreach (var (key, properties) in data)
+        {
+            var values = properties.Keys.Select(value => $"\"{value}\"");
+            var addCodeLine = $"\t\t\t.Add(\"{key}\", ImmutableArray.Create({string.Join(", ", values)}))";
+
+            if (key == lastKey) addCodeLine += ";";
+            ImmutableBuilder.AppendLine(addCodeLine);
+        }
+
+        return ImmutableBuilder
+            .AppendLine("}")
+            .ToString();
+    }
+
+    private static string BuildMainEnum(string enumName, ImmutableDictionary<string, string> properties)
+    {
+        var enumBuilder = new StringBuilder()
+            .AppendLine($"\tpublic enum {enumName}")
+            .AppendLine("\t{");
+
+        var propertyLines = properties.Select(property =>
+        {
+            return $"\t\t[Summary(\"{property.Value}\")]\n\t\t{property.Key}";
+        });
+
+        return enumBuilder
+            .AppendLine(string.Join(",\n", propertyLines))
+            .AppendLine("\t}")
+            .ToString();
+    }
+
+    private static string BuildMasterEnum(IEnumerable<string> enumNames)
+    {
+        return new StringBuilder()
+            .AppendLine("\tpublic enum RestObjects")
+            .AppendLine("\t{")
+            .AppendLine(string.Join(",\n", enumNames.Select(name => $"\t\t{name}")))
+            .AppendLine("\t}")
+            .ToString();
     }
 }
