@@ -1,7 +1,7 @@
 # NetCordSampler
 A Discord bot that generates and displays various example code snippets of NetCord's C# Discord library. The goal of this concept bot is to be an informational midpoint between the existing NetCord tutorials/guides and the NetCord api documentation pages. 
 
-### Proof Of Concept Project
+## Proof Of Concept Project
 > Currently, this project is solely a proof of concept. The Initial focal point to start should cover examples that are the most essential (commonly used). Following that should be examples that cover the most frequently asked questions topics (based on NetCord's support channel on Discord).
 
 ### Features
@@ -12,6 +12,17 @@ A Discord bot that generates and displays various example code snippets of NetCo
 - **Output Options**: Code block or file.
 - Pictures alongside the general information of the various Discord components/etc that you can select for samples.
 - Samples that cover both Classic Syntax and Fluent Syntax.
+
+## /Sampler (Application/Slash Commands)
+### Search
+- Search all samples, using auto-complete as you type.
+- Can select to customize or generate a sample quickly using default values.
+### Browse
+- Browse through all samples by category.
+- Can select to customize or generate a sample quickly using default values.
+### Builder
+- Build your own custom example based on an initial base template.
+- Each step of the chosen template allows for full customization.
 
 ### NetCord.Rest (Category)
 > ### **SubCategory:** Message
