@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35707.178 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCordSampler", "NetCordSampler\NetCordSampler.csproj", "{3ADD0955-0F2F-4B6D-A80D-97B668620935}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCordSampler.Utilities", "NetCordSampler.Utilities\NetCordSampler.Utilities.csproj", "{C8F4316D-AB78-4DA5-B790-4C8169AF1D1E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{3ADD0955-0F2F-4B6D-A80D-97B668620935}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3ADD0955-0F2F-4B6D-A80D-97B668620935}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3ADD0955-0F2F-4B6D-A80D-97B668620935}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8F4316D-AB78-4DA5-B790-4C8169AF1D1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8F4316D-AB78-4DA5-B790-4C8169AF1D1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8F4316D-AB78-4DA5-B790-4C8169AF1D1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8F4316D-AB78-4DA5-B790-4C8169AF1D1E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
