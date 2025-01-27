@@ -5,7 +5,7 @@ namespace NetCordSampler.Utilities;
 
 public static class SourceGenerator
 {
-    public static string GenerateEnum(ImmutableDictionary<string, ImmutableDictionary<string, string>> data)
+    public static string GenerateEnum(ImmutableDictionary<string, ImmutableDictionary<string, PropertyInformation>> data)
     {
         var sourceBuilder = new StringBuilder()
             .AppendLine("namespace NetCordSampler.Enums;")
@@ -13,33 +13,23 @@ public static class SourceGenerator
             .AppendLine("public static class RestEnums")
             .AppendLine("{");
 
-        var enumDefinitions = data
-            .Where(keyValuePair => keyValuePair.Value.Count > 0)
-            .Select(keyValuePair => BuildMainEnum(keyValuePair.Key, keyValuePair.Value))
-            .ToList();
+        foreach (var (objectName, properties) in data)
+            sourceBuilder.AppendLine(BuildMainEnum(objectName, properties));
 
-        foreach (var enumDefinition in enumDefinitions)
-            sourceBuilder.AppendLine(enumDefinition);
+        if (!data.IsEmpty)
+            sourceBuilder.AppendLine(BuildMasterEnum(data.Keys));
 
-
-        if (enumDefinitions.Count > 0)
-        {
-            var masterEnum = BuildMasterEnum(data.Keys);
-            sourceBuilder.AppendLine(masterEnum);
-        }
-
-        sourceBuilder.AppendLine("}");
-
-        return sourceBuilder.ToString();
+        return sourceBuilder
+            .AppendLine("}")
+            .ToString();
     }
 
-    public static string GenerateImmutableSourceCode(ImmutableDictionary<string, ImmutableDictionary<string, string>> data)
+    public static string GenerateImmutableSourceCode(ImmutableDictionary<string, ImmutableDictionary<string, PropertyInformation>> data)
     {
-        // TODO: Handle this properly
         if (data.IsEmpty)
             return string.Empty;
 
-        var ImmutableBuilder = new StringBuilder()
+        var immutableBuilder = new StringBuilder()
             .AppendLine("using System.Collections.Immutable;")
             .AppendLine()
             .AppendLine("namespace NetCordSampler.ImmutableCollections;")
@@ -50,33 +40,56 @@ public static class SourceGenerator
             .AppendLine("\t\tImmutableDictionary.Create<string, ImmutableArray<string>>()");
 
         var lastKey = data.Keys.Last();
-        foreach (var (key, properties) in data)
+        foreach (var (objectName, properties) in data)
         {
-            var values = properties.Keys.Select(value => $"\"{value}\"");
-            var addCodeLine = $"\t\t\t.Add(\"{key}\", ImmutableArray.Create({string.Join(", ", values)}))";
+            var propertyNames = properties.Keys.Select(name => $"\"{name}\"");
+            var addCodeLine = $"\t\t\t.Add(\"{objectName}\", [{string.Join(", ", propertyNames)}])";
 
-            if (key == lastKey) addCodeLine += ";";
-            ImmutableBuilder.AppendLine(addCodeLine);
+            if (objectName == lastKey)
+                addCodeLine += ";";
+
+            immutableBuilder.AppendLine(addCodeLine);
         }
 
-        return ImmutableBuilder
+        return immutableBuilder
             .AppendLine("}")
             .ToString();
     }
 
-    private static string BuildMainEnum(string enumName, ImmutableDictionary<string, string> properties)
+    private static string BuildMainEnum(string objectName, ImmutableDictionary<string, PropertyInformation> properties)
     {
         var enumBuilder = new StringBuilder()
-            .AppendLine($"\tpublic enum {enumName}")
-            .AppendLine("\t{");
+            .Append($"\tpublic enum {objectName}\n")
+            .Append("\t{\n");
 
-        var propertyLines = properties.Select(property =>
+        var propertiesList = properties.ToList();
+        int totalProperties = propertiesList.Count;
+        int currentIndex = 0;
+
+        foreach (var property in propertiesList)
         {
-            return $"\t\t[Summary(\"{property.Value}\")]\n\t\t{property.Key}";
-        });
+            currentIndex++;
+            var propertyInfo = property.Value;
+            var attributeBlock = new List<string>
+            {
+                $"typeof({propertyInfo.Type})",
+                $"\"{propertyInfo.Summary}\"",
+                $"\"{propertyInfo.IsRequired}\""
+            };
+
+            enumBuilder
+                .AppendLine($"\t\t[Summary(\"{propertyInfo.Summary}\")]")
+                //.AppendLine($"\t\t[DiscordRules(\"\")]\n")
+                .AppendLine($"\t\t[SamplerData({string.Join(", ", attributeBlock)})]")
+                .Append($"\t\t{property.Key}");
+
+            if (currentIndex < totalProperties)
+                enumBuilder.AppendLine(",");
+            else
+                enumBuilder.AppendLine();
+        }
 
         return enumBuilder
-            .AppendLine(string.Join(",\n", propertyLines))
             .AppendLine("\t}")
             .ToString();
     }
@@ -90,4 +103,22 @@ public static class SourceGenerator
             .AppendLine("\t}")
             .ToString();
     }
+}
+
+public class PropertyInformation
+{
+    public string Summary { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string AccessModifier { get; set; } = string.Empty;
+    public bool IsStatic { get; set; }
+    public bool IsNullable { get; set; }
+    public string TypeIdentifierName { get; set; } = string.Empty;
+    public List<string> Attributes { get; set; } = [];
+    public List<string> GenericArguments { get; set; } = [];
+    public bool IsVirtual { get; set; }
+    public bool IsAbstract { get; set; }
+    public bool IsOverride { get; set; }
+    public bool HasBackingField { get; set; }
+    public string DeclaringType { get; set; } = string.Empty;
+    public bool IsRequired { get; set; }
 }

@@ -19,40 +19,35 @@ internal static class Program
         var fileNames = await File.ReadAllLinesAsync(fileNamesPath);
         var cleanedData = await GetCleanSummariesAsync(fileNames);
 
-        var summaries = cleanedData
-            .Where(keyValuePair => keyValuePair.Value.Count > 0)
-            .ToImmutableDictionary(
-                keyValuePair => keyValuePair.Key,
-                keyValuePair => keyValuePair.Value);
-
         // Enum
-        var enumSourceCode = SourceGenerator.GenerateEnum(summaries);
+        var enumSourceCode = SourceGenerator.GenerateEnum(cleanedData);
         File.WriteAllText(enumsOutputPath, enumSourceCode);
 
         // Immutable
-        var immutableSourceCode = SourceGenerator.GenerateImmutableSourceCode(summaries);
+        var immutableSourceCode = SourceGenerator.GenerateImmutableSourceCode(cleanedData);
         File.WriteAllText(collectionsOutputPath, immutableSourceCode);
     }
 
-    private static async Task<ImmutableDictionary<string, ImmutableDictionary<string, string>>> GetCleanSummariesAsync(IEnumerable<string> fileNames)
+    private static async Task<ImmutableDictionary<string, ImmutableDictionary<string, PropertyInformation>>> GetCleanSummariesAsync(IEnumerable<string> fileNames)
     {
         var netcordSourceFiles = fileNames.Select(async fileName =>
         {
             var sourceCode = await DownloadFileAsync(fileName);
             if (sourceCode != null)
-            {
                 return KeyValuePair.Create(
-                    Housekeeping.CleanFileName(fileName), 
+                    Housekeeping.CleanFileName(fileName),
                     ExtractSummaries(sourceCode));
-            }
             else return default;
         });
 
         var results = await Task.WhenAll(netcordSourceFiles);
 
         var summariesDictionary = results
-            .Where(result => !string.IsNullOrEmpty(result.Key) && result.Value is not null)
-            .ToImmutableDictionary(result => result.Key, result => result.Value);
+            .Where(result => !string.IsNullOrEmpty(result.Key) && result.Value != null && result.Value.Count > 0)
+            .ToImmutableDictionary(
+                keyValuePair => keyValuePair.Key,
+                keyValuePair => keyValuePair.Value,
+                StringComparer.OrdinalIgnoreCase);
 
         return summariesDictionary;
     }
@@ -65,16 +60,16 @@ internal static class Program
             return await httpClient.GetStringAsync(url);
         }
         catch (HttpRequestException httpRequestException)
-            when (httpRequestException.StatusCode == System.Net.HttpStatusCode.NotFound)
+        when (httpRequestException.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             Console.WriteLine($"File not found: {url}");
             return null;
         }
     }
 
-    private static ImmutableDictionary<string, string> ExtractSummaries(string sourceCode)
+    private static ImmutableDictionary<string, PropertyInformation> ExtractSummaries(string sourceCode)
     {
-        var builder = ImmutableDictionary.CreateBuilder<string, string>();
+        var builder = ImmutableDictionary.CreateBuilder<string, PropertyInformation>();
 
         // Source parsed to a syntax tree
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
@@ -89,27 +84,62 @@ internal static class Program
             // Extract the summary comment
             var summaryText = propertyDeclaration
 
-                // Get the leading trivia
-                .GetLeadingTrivia()
+            // Get the leading trivia
+            .GetLeadingTrivia()
 
-                // Select the structure
-                .Select(trivia => trivia.GetStructure())
+            // Select the structure
+            .Select(trivia => trivia.GetStructure())
 
-                // Filter by comment trivia
-                .OfType<DocumentationCommentTriviaSyntax>()
+            // Filter by comment trivia
+            .OfType<DocumentationCommentTriviaSyntax>()
 
-                // Flatten comments to single sequence
-                .SelectMany(documentation => documentation.Content.OfType<XmlElementSyntax>())
+            // Flatten comments to single sequence
+            .SelectMany(documentation => documentation.Content.OfType<XmlElementSyntax>())
 
-                // Filter Xml by "summary" element
-                .Where(element => element.StartTag.Name.ToString() == "summary")
+            // Filter Xml by "summary" element
+            .Where(element => element.StartTag.Name.ToString() == "summary")
 
-                // Clean excess comment syntax and format/adjust its contents
-                .Select(element => Housekeeping.ParseXmlComment(element.Content.ToString()))
-                .FirstOrDefault();
-            
+            // Clean excess comment syntax and format/adjust its contents
+            .Select(element => Housekeeping.ParseXmlComment(element.Content.ToString()))
+            .FirstOrDefault();
+
             if (!string.IsNullOrEmpty(summaryText))
-                builder[propertyDeclaration.Identifier.Text] = summaryText;
+            {
+                var propertyInformation = new PropertyInformation
+                {
+                    Summary = summaryText,
+                    Type = propertyDeclaration.Type.ToString(),
+                    AccessModifier = propertyDeclaration.Modifiers
+                        .FirstOrDefault(modifier => modifier.IsKind(SyntaxKind.PublicKeyword) ||
+                            modifier.IsKind(SyntaxKind.PrivateKeyword) ||
+                            modifier.IsKind(SyntaxKind.ProtectedKeyword) ||
+                            modifier.IsKind(SyntaxKind.InternalKeyword))
+                        .ToString(),
+                    IsStatic = propertyDeclaration.Modifiers.Any(SyntaxKind.StaticKeyword),
+                    IsNullable = propertyDeclaration.Type is NullableTypeSyntax,
+                    TypeIdentifierName = propertyDeclaration.Type is IdentifierNameSyntax identifierName
+                        ? identifierName.Identifier.Text
+                        : propertyDeclaration.Type.ToString(),
+                    GenericArguments = propertyDeclaration.Type is GenericNameSyntax genericName
+                        ? genericName.TypeArgumentList.Arguments.Select(arg => arg.ToString()).ToList()
+                        : [],
+                    IsVirtual = propertyDeclaration.Modifiers.Any(SyntaxKind.VirtualKeyword),
+                    IsAbstract = propertyDeclaration.Modifiers.Any(SyntaxKind.AbstractKeyword),
+                    IsOverride = propertyDeclaration.Modifiers.Any(SyntaxKind.OverrideKeyword),
+                    DeclaringType = propertyDeclaration.Parent is ClassDeclarationSyntax classDecl
+                        ? classDecl.Identifier.Text
+                        : string.Empty,
+                    IsRequired = propertyDeclaration.Modifiers.Any(SyntaxKind.RequiredKeyword)
+                };
+
+                // Extract attributes
+                foreach (var attributeList in propertyDeclaration.AttributeLists)
+                    foreach (var attribute in attributeList.Attributes)
+                        propertyInformation.Attributes.Add(attribute.Name.ToString());
+
+                if (!builder.ContainsKey(propertyDeclaration.Identifier.Text))
+                    builder[propertyDeclaration.Identifier.Text] = propertyInformation;
+            }
         }
 
         return builder.ToImmutable();
