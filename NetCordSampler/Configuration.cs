@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 
 namespace NetCordSampler;
 
@@ -27,8 +28,38 @@ public class CodeSamplesSettings
     [Required]
     public required DefaultValues.Url? DefaultUrls { get; set; }
 
+    [Required]
+    public required UserInterface.Search SearchInterface { get; set; }
+
+    [Required]
+    public required UserInterface.Browse BrowseInterface { get; set; }
+
+    [Required]
+    public required UserInterface.Builder BuilderInterface { get; set; }
+
+    public class UserInterface
+    {
+        public class Search
+        {
+            public required int EmbedColor { get; set; }
+        }
+
+        public class Browse
+        {
+            public required int EmbedColor { get; set; }
+        }
+
+        public class Builder
+        {
+            public required int EmbedColor { get; set; }
+        }
+    }
+
     public class DefaultValues
     {
+        [Required]
+        public required string MissingDescription { get; set; }
+
         public class Url
         {
             [Required]
