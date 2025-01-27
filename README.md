@@ -24,6 +24,20 @@ A Discord bot that generates and displays various example code snippets of NetCo
 - Build your own custom example based on an initial base template.
 - Each step of the chosen template allows for full customization.
 
+## Informational & Default (Content) Value Data
+### Summary
+- NetCord Documentation Summaries (Extracted from the source via Github)
+### Sampler
+- Property/Object Type
+- Short Description (Summary re-written to match proper default value/sample content)
+- TBD
+### (Discord) Limits/Rules
+> Have the ability to to check Discord Api headers to keep most of this information up to date - Like: `X-RateLimit-Limit`
+- Name
+- Description
+- Value (Min/Max)
+- RateLimit (For endpoints)
+
 ### NetCord.Rest (Category)
 > ### **SubCategory:** Message
 > - **Object:** *NetCord.Rest.MessageProperties*
