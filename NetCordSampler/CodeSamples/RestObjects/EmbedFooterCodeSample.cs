@@ -1,7 +1,7 @@
 using NetCord.Rest;
 using NetCordSampler.Interfaces;
 
-namespace NetCordSampler.CodeSamples.Rest;
+namespace NetCordSampler.CodeSamples.RestObjects;
 
 public class EmbedFooterCodeSample : ICodeSample
 {
@@ -14,7 +14,7 @@ public class EmbedFooterCodeSample : ICodeSample
     public string BuildCodeSample(object netcordObject)
         => Builder.BuildCodeSample(netcordObject);
 
-    public static EmbedFooterProperties GetDefault() 
+    public static EmbedFooterProperties GetDefault()
         => DefaultFooter();
 
     public string QuickBuild(Type type)

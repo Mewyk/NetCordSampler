@@ -1,7 +1,7 @@
 using NetCord.Rest;
 using NetCordSampler.Interfaces;
 
-namespace NetCordSampler.CodeSamples.Rest;
+namespace NetCordSampler.CodeSamples.RestObjects;
 
 public class EmbedFieldCodeSample : ICodeSample
 {

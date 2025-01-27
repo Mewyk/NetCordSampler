@@ -13,8 +13,9 @@ using NetCord.Services.ApplicationCommands;
 using NetCord.Services.ComponentInteractions;
 
 using NetCordSampler;
-using NetCordSampler.CodeSamples.Rest;
+using NetCordSampler.CodeSamples.RestObjects;
 using NetCordSampler.Interfaces;
+using System.Text.RegularExpressions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
