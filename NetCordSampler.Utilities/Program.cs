@@ -108,34 +108,8 @@ internal static class Program
                 var propertyInformation = new PropertyInformation
                 {
                     Summary = summaryText,
-                    Type = propertyDeclaration.Type.ToString(),
-                    AccessModifier = propertyDeclaration.Modifiers
-                        .FirstOrDefault(modifier => modifier.IsKind(SyntaxKind.PublicKeyword) ||
-                            modifier.IsKind(SyntaxKind.PrivateKeyword) ||
-                            modifier.IsKind(SyntaxKind.ProtectedKeyword) ||
-                            modifier.IsKind(SyntaxKind.InternalKeyword))
-                        .ToString(),
-                    IsStatic = propertyDeclaration.Modifiers.Any(SyntaxKind.StaticKeyword),
-                    IsNullable = propertyDeclaration.Type is NullableTypeSyntax,
-                    TypeIdentifierName = propertyDeclaration.Type is IdentifierNameSyntax identifierName
-                        ? identifierName.Identifier.Text
-                        : propertyDeclaration.Type.ToString(),
-                    GenericArguments = propertyDeclaration.Type is GenericNameSyntax genericName
-                        ? genericName.TypeArgumentList.Arguments.Select(arg => arg.ToString()).ToList()
-                        : [],
-                    IsVirtual = propertyDeclaration.Modifiers.Any(SyntaxKind.VirtualKeyword),
-                    IsAbstract = propertyDeclaration.Modifiers.Any(SyntaxKind.AbstractKeyword),
-                    IsOverride = propertyDeclaration.Modifiers.Any(SyntaxKind.OverrideKeyword),
-                    DeclaringType = propertyDeclaration.Parent is ClassDeclarationSyntax classDecl
-                        ? classDecl.Identifier.Text
-                        : string.Empty,
-                    IsRequired = propertyDeclaration.Modifiers.Any(SyntaxKind.RequiredKeyword)
+                    Type = propertyDeclaration.Type.ToString()
                 };
-
-                // Extract attributes
-                foreach (var attributeList in propertyDeclaration.AttributeLists)
-                    foreach (var attribute in attributeList.Attributes)
-                        propertyInformation.Attributes.Add(attribute.Name.ToString());
 
                 if (!builder.ContainsKey(propertyDeclaration.Identifier.Text))
                     builder[propertyDeclaration.Identifier.Text] = propertyInformation;

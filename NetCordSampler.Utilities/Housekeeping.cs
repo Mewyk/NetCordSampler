@@ -25,9 +25,7 @@ public static class Housekeeping
             StringSplitOptions.RemoveEmptyEntries);
 
         foreach (string line in lines)
-        {
             result.AppendLine(line);
-        }
 
         return result.ToString();
     }
