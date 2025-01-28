@@ -28,17 +28,28 @@ public static class Builder
         var stringBuilder = new StringBuilder();
         var indentString = new string(' ', indent);
 
-        stringBuilder.AppendLine($"{indentString}new {type.Name}()");
+        stringBuilder.AppendLine($"new {type.Name}()");
         stringBuilder.AppendLine($"{indentString}{{");
 
         var properties = GetProperties(type);
-        var nonNullProps = properties.Where(property => property.GetValue(netcordObject) is not null).ToList();
-        for (int iterator = 0; iterator < nonNullProps.Count; iterator++)
+        var nonDefaultProps = properties.Where(property =>
         {
-            var property = nonNullProps[iterator];
+            var value = property.GetValue(netcordObject);
+            if (value is null)
+                return false;
+
+            if (property.PropertyType.IsValueType)
+                return !value.Equals(Activator.CreateInstance(property.PropertyType));
+
+            return true;
+        }).ToList();
+
+        for (int iterator = 0; iterator < nonDefaultProps.Count; iterator++)
+        {
+            var property = nonDefaultProps[iterator];
             var value = property.GetValue(netcordObject);
             string formattedValue = FormatValue(value!, indent + 4);
-            var comma = iterator == nonNullProps.Count - 1 ? "" : ",";
+            var comma = iterator == nonDefaultProps.Count - 1 ? "" : ",";
             stringBuilder.AppendLine($"{indentString}    {property.Name} = {formattedValue}{comma}");
         }
 
@@ -54,11 +65,12 @@ public static class Builder
     {
         return value switch
         {
-            string str => $"\"{str}\"",
+            string stringValue => $"\"{stringValue}\"",
             DateTimeOffset offset => $"DateTimeOffset.Parse(\"{offset:O}\")",
             Color color => $"new({color.RawValue})",
             IEnumerable<object> collection => FormatCollection(collection, indent),
-            var netcordObject when netcordObject.GetType().IsClass && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
+            var netcordObject when netcordObject.GetType().IsClass 
+                && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
                 => BuildCodeSample(netcordObject, indent),
             _ => value.ToString() ?? string.Empty
         };
