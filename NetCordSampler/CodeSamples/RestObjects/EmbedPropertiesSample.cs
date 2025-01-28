@@ -4,7 +4,7 @@ using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedCodeSample : ICodeSample<EmbedProperties>
+public class EmbedPropertiesSample : ICodeSample<EmbedProperties>
 {
     public EmbedProperties CreateDefault(SamplerSettings settings) => new()
     {
