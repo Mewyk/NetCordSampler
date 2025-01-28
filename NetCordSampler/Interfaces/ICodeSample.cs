@@ -2,6 +2,6 @@
 
 public interface ICodeSample<T> where T : class
 {
-    string BuildCodeSample(T netcordObject);
-    string QuickBuild();
+    T CreateDefault(SamplerSettings settings);
+    bool IsEmpty(T instance);
 }

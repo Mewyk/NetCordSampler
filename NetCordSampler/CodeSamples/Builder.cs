@@ -1,13 +1,42 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
+
+using Microsoft.Extensions.Options;
+
 using NetCord;
 
 namespace NetCordSampler.CodeSamples;
 
-public static class Builder
+public class Builder(IOptions<SamplerSettings> options)
 {
+    private readonly SamplerSettings _settings = options.Value;
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
+
+    public string QuickBuild<T>() where T : class, new()
+    {
+        var codeSample = CodeSampleLocator.GetCodeSample<T>()
+            ?? throw new InvalidOperationException(
+                $"No ICodeSample<{typeof(T).Name}> found for type {typeof(T).Name}");
+
+        return BuildCodeSample(
+            codeSample.CreateDefault(_settings));
+    }
+
+    public string CustomBuild<T>(Action<T> configure) where T : class, new()
+    {
+        var netcordObject = new T();
+        configure(netcordObject);
+
+        var codeSample = CodeSampleLocator.GetCodeSample<T>()
+            ?? throw new InvalidOperationException(
+                $"No ICodeSample<{typeof(T).Name}> found for type {typeof(T).Name}");
+
+        if (codeSample.IsEmpty(netcordObject))
+            throw new ArgumentException("Requires at least one property to be set");
+
+        return BuildCodeSample(netcordObject);
+    }
 
     public static T CreateCustom<T>(Action<T> configure, Func<T, bool> isEmpty) where T : new()
     {
@@ -15,12 +44,12 @@ public static class Builder
         configure(instance);
 
         if (isEmpty(instance))
-            throw new ArgumentException("Requires at least one property to be set.");
+            throw new ArgumentException("Requires at least one property to be set");
 
         return instance;
     }
 
-    public static string BuildCodeSample<T>(T netcordObject, int indent = 0)
+    public string BuildCodeSample<T>(T netcordObject, int indent = 0)
     {
         ArgumentNullException.ThrowIfNull(netcordObject);
 
@@ -61,7 +90,7 @@ public static class Builder
         PropertyCache.GetOrAdd(targetType, type =>
             type.GetProperties(BindingFlags.Public | BindingFlags.Instance));
 
-    private static string FormatValue(object value, int indent)
+    private string FormatValue(object value, int indent)
     {
         return value switch
         {
@@ -69,14 +98,14 @@ public static class Builder
             DateTimeOffset offset => $"DateTimeOffset.Parse(\"{offset:O}\")",
             Color color => $"new({color.RawValue})",
             IEnumerable<object> collection => FormatCollection(collection, indent),
-            var netcordObject when netcordObject.GetType().IsClass 
+            var netcordObject when netcordObject.GetType().IsClass
                 && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
                 => BuildCodeSample(netcordObject, indent),
             _ => value.ToString() ?? string.Empty
         };
     }
 
-    private static string FormatCollection(IEnumerable<object> collection, int indent)
+    private string FormatCollection(IEnumerable<object> collection, int indent)
     {
         var stringBuilder = new StringBuilder("[\n");
         var items = collection.ToList();

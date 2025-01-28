@@ -4,44 +4,50 @@ using NetCord;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 
+using NetCordSampler.CodeSamples;
+
 namespace NetCordSampler.Modules;
 
-public class CoreCommandModule(IOptions<Configuration> options) : ApplicationCommandModule<SlashCommandContext>
+public class CoreCommandModule(
+    IOptions<Configuration> settings, Builder builder) 
+    : ApplicationCommandModule<SlashCommandContext>
 {
-    [SlashCommand("search", "Search and customize NetCord samples", 
+    private readonly IOptions<Configuration> _settings = settings;
+    private readonly Builder _builder = builder;
+
+    [SlashCommand("search", "Search and customize NetCord samples",
         IntegrationTypes = [
-            ApplicationIntegrationType.GuildInstall, 
+            ApplicationIntegrationType.GuildInstall,
             ApplicationIntegrationType.UserInstall])]
     public InteractionMessageProperties SearchSamples(
         [SlashCommandParameter(
-            Description = "",
-            MaxLength = 90,
-            AutocompleteProviderType = typeof(SearchSamplesAutocompleteProvider))]
-        string sampleSelection)
+                Description = "",
+                MaxLength = 90,
+                AutocompleteProviderType = typeof(SearchSamplesAutocompleteProvider))]
+            string sampleSelection)
     {
-        var settings = options?.Value?.Settings;
+        var settings = _settings?.Value?.Settings;
         return settings == null
             ? throw new ArgumentNullException(nameof(sampleSelection), "SamplerSettings cannot be null")
-            : SampleHelper.CreateQuickBuildMessage(sampleSelection, settings, Context);
+            : SampleHelper.CreateQuickBuildMessage(sampleSelection, settings, Context, _builder);
     }
 
     private class SearchSamplesAutocompleteProvider : IAutocompleteProvider<AutocompleteInteractionContext>
     {
         public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
-            ApplicationCommandInteractionDataOption option, 
+            ApplicationCommandInteractionDataOption option,
             AutocompleteInteractionContext context)
         {
-            return new(SampleHelper.FindSamples(option.Value?.ToString() 
-                ?? string.Empty, 0, 25, out _)
-                .Select(source =>
-                {
-                    string name = source.Name;
+            var searchTerm = option.Value?.ToString() ?? string.Empty;
+            var samples = SampleHelper.FindSamples(searchTerm, 0, 25, out _);
 
-                    if (name.Length > 90)
-                        name = name[..90];
+            var choices = samples.Select(source =>
+            {
+                string name = source.Name.Length > 90 ? source.Name[..90] : source.Name;
+                return new ApplicationCommandOptionChoiceProperties(name, name);
+            });
 
-                    return new ApplicationCommandOptionChoiceProperties(name, name);
-                }));
+            return new ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(choices);
         }
     }
 }

@@ -46,7 +46,8 @@ public static class SampleHelper
     }
 
     public static InteractionMessageProperties CreateQuickBuildMessage(
-        string sampleSelection, SamplerSettings settings, SlashCommandContext context)
+        string sampleSelection, SamplerSettings settings, 
+        SlashCommandContext context, Builder builder)
     {
         var sample = Samples.FirstOrDefault(sample =>
             sample.Name.Equals(sampleSelection, StringComparison.OrdinalIgnoreCase)) 
@@ -69,7 +70,7 @@ public static class SampleHelper
             ?? throw new InvalidOperationException(
                 $"Failed to create an instance of {type.FullName}");
 
-        string codeSample = Builder.BuildCodeSample(netcordObject, indent: 4);
+        string codeSample = builder.BuildCodeSample(netcordObject, indent: 4);
 
         return new InteractionMessageProperties()
             .WithContent($"```CSharp\n{codeSample}\n```")               

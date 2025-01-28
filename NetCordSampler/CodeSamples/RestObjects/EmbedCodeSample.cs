@@ -1,40 +1,42 @@
-﻿using Microsoft.Extensions.Options;
-
-using NetCord.Rest;
+﻿using NetCord.Rest;
 
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedCodeSample(
-    IOptions<SamplerSettings> settings) : ICodeSample<EmbedProperties>
+public class EmbedCodeSample : ICodeSample<EmbedProperties>
 {
-    private readonly SamplerSettings _settings = settings.Value;
-
-    public static EmbedProperties CreateDefault(SamplerSettings samplerSettings) => new()
+    public EmbedProperties CreateDefault(SamplerSettings settings) => new()
     {
-        Title = "Default Title", // samplerSettings.DefaultValues.MissingTitle
-        Description = "Default Description", // samplerSettings.DefaultValues.MissingDescription
+        Title = settings.DefaultValues.MissingTitle,
+        Description = settings.DefaultValues.MissingDescription,
         Color = new(0xFF00FF),
         Timestamp = DateTimeOffset.UtcNow,
-        Image = samplerSettings.DefaultValues.Urls.Image,
-        Thumbnail = samplerSettings.DefaultValues.Urls.Thumbnail,
-        Url = samplerSettings.DefaultValues.Urls.Website,
-        Author = EmbedAuthorCodeSample.CreateDefault(samplerSettings),
-        Footer = EmbedFooterCodeSample.CreateDefault(samplerSettings),
+        Image = settings.DefaultValues.Urls.Image,
+        Thumbnail = settings.DefaultValues.Urls.Thumbnail,
+        Url = settings.DefaultValues.Urls.Website,
+        Author = CodeSampleLocator
+            .GetCodeSample<EmbedAuthorProperties>()?
+            .CreateDefault(settings) 
+            ?? throw new InvalidOperationException("Not found"),
+        Footer = CodeSampleLocator
+            .GetCodeSample<EmbedFooterProperties>()?
+            .CreateDefault(settings) 
+            ?? throw new InvalidOperationException("Not found"),
         Fields =
         [
-            EmbedFieldCodeSample.CreateDefault(samplerSettings),
-            EmbedFieldCodeSample.CreateDefault(samplerSettings)
+            CodeSampleLocator
+                .GetCodeSample<EmbedFieldProperties>()?
+                .CreateDefault(settings)
+                ?? throw new InvalidOperationException("Not found"),
+            CodeSampleLocator
+                .GetCodeSample<EmbedFieldProperties>()?
+                .CreateDefault(settings) 
+                ?? throw new InvalidOperationException("Not found")
         ]
     };
 
-    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
-
-    public static EmbedProperties CreateCustom(Action<EmbedProperties> configuration) =>
-        Builder.CreateCustom(configuration, IsEmpty);
-
-    private static bool IsEmpty(EmbedProperties embed) =>
+    public bool IsEmpty(EmbedProperties embed) => 
         string.IsNullOrEmpty(embed.Title) &&
         string.IsNullOrEmpty(embed.Description) &&
         string.IsNullOrEmpty(embed.Url) &&
@@ -45,7 +47,4 @@ public class EmbedCodeSample(
         embed.Image == null &&
         embed.Thumbnail == null &&
         (embed.Fields == null || !embed.Fields.Any());
-
-    public string BuildCodeSample(EmbedProperties netcordObject) =>
-        Builder.BuildCodeSample(netcordObject);
 }

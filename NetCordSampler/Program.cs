@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using NetCord;
 using NetCord.Gateway;
@@ -13,6 +14,7 @@ using NetCord.Services.ApplicationCommands;
 using NetCord.Services.ComponentInteractions;
 
 using NetCordSampler;
+using NetCordSampler.CodeSamples;
 using NetCordSampler.CodeSamples.RestObjects;
 using NetCordSampler.Interfaces;
 
@@ -55,29 +57,33 @@ builder.Services.AddSingleton<ICodeSample<EmbedAuthorProperties>, EmbedAuthorCod
 builder.Services.AddSingleton<ICodeSample<EmbedFooterProperties>, EmbedFooterCodeSample>();
 builder.Services.AddSingleton<ICodeSample<EmbedFieldProperties>, EmbedFieldCodeSample>();
 
+builder.Services.AddSingleton<Builder>();
+
 var host = builder.Build()
     .AddModules(typeof(Program).Assembly)
     .UseGatewayEventHandlers();
 
-var embedCodeSample = host.Services.GetRequiredService<ICodeSample<EmbedProperties>>();
-await GenerateExamples(embedCodeSample);
+var builderInstance = host.Services.GetRequiredService<Builder>();
+var samplerSettings = host.Services.GetRequiredService<IOptions<SamplerSettings>>().Value;
+
+await GenerateExamples(builderInstance);
 
 await host.RunAsync();
 
 // NOTE: Below is just temporary for quick testing purposes
-static async Task GenerateExamples(ICodeSample<EmbedProperties> codeSample)
+static Task GenerateExamples(Builder builder)
 {
     // Simple custom embed code sample (few options used)
-    var simpleCustomEmbed = EmbedCodeSample.CreateCustom(embed =>
+    var simpleCustomEmbedCode = builder.CustomBuild<EmbedProperties>(embed =>
     {
         embed.Title = "Simple custom embed title";
         embed.Description = "Simple custom embed code sample description text";
     });
     Console.WriteLine("Simple Embed Output:");
-    Console.WriteLine(await Task.Run(() => codeSample.BuildCodeSample(simpleCustomEmbed)));
+    Console.WriteLine(simpleCustomEmbedCode);
 
-    // Full custom embed code sample 
-    var fullCustomEmbed = EmbedCodeSample.CreateCustom(embed =>
+    // Full custom embed code sample
+    var fullCustomEmbedCode = builder.CustomBuild<EmbedProperties>(embed =>
     {
         embed.Title = "Full custom embed title";
         embed.Description = "Full custom embed code sample description text";
@@ -86,38 +92,40 @@ static async Task GenerateExamples(ICodeSample<EmbedProperties> codeSample)
         embed.Image = "https://example.com/image.png";
         embed.Thumbnail = "https://example.com/thumbnail.png";
         embed.Url = "https://example.com";
-        embed.Author = EmbedAuthorCodeSample.CreateCustom(author =>
+        embed.Author = new EmbedAuthorProperties
         {
-            author.Name = "Author Name";
-            author.IconUrl = "https://example.com/icon.png";
-            author.Url = "https://example.com";
-        });
-        embed.Footer = EmbedFooterCodeSample.CreateCustom(footer =>
+            Name = "Author Name",
+            IconUrl = "https://example.com/icon.png",
+            Url = "https://example.com"
+        };
+        embed.Footer = new EmbedFooterProperties
         {
-            footer.Text = "Footer Text";
-            footer.IconUrl = "https://example.com/icon.png";
-        });
+            Text = "Footer Text",
+            IconUrl = "https://example.com/icon.png"
+        };
         embed.Fields =
         [
-            EmbedFieldCodeSample.CreateCustom(field =>
+            new EmbedFieldProperties
             {
-                field.Name = "Field One";
-                field.Value = "Value One";
-                field.Inline = true;
-            }),
-            EmbedFieldCodeSample.CreateCustom(field =>
+                Name = "Field One",
+                Value = "Value One",
+                Inline = true
+            },
+            new EmbedFieldProperties
             {
-                field.Name = "Field Two";
-                field.Value = "Value Two";
+                Name = "Field Two",
+                Value = "Value Two"
                 // Inline defaults to false
-            })
+            }
         ];
     });
     Console.WriteLine("\nFull Embed Output:");
-    Console.WriteLine(await Task.Run(() => codeSample.BuildCodeSample(fullCustomEmbed)));
+    Console.WriteLine(fullCustomEmbedCode);
 
     // QuickBuild (full auto code samples)
-    // Uses default values and does not allow any custom values
     Console.WriteLine("\nQuickBuild Embed Output:");
-    Console.WriteLine(await Task.Run(() => codeSample.QuickBuild()));
+    var quickBuildEmbedCode = builder.QuickBuild<EmbedProperties>();
+    Console.WriteLine(quickBuildEmbedCode);
+
+    return Task.CompletedTask;
 }
