@@ -52,10 +52,10 @@ builder.Services
         .AddConsole()
         .SetMinimumLevel(LogLevel.Debug));
 
-builder.Services.AddSingleton<ICodeSample<EmbedProperties>, EmbedCodeSample>();
-builder.Services.AddSingleton<ICodeSample<EmbedAuthorProperties>, EmbedAuthorCodeSample>();
-builder.Services.AddSingleton<ICodeSample<EmbedFooterProperties>, EmbedFooterCodeSample>();
-builder.Services.AddSingleton<ICodeSample<EmbedFieldProperties>, EmbedFieldCodeSample>();
+builder.Services.AddSingleton<ICodeSample<EmbedProperties>, EmbedPropertiesSample>();
+builder.Services.AddSingleton<ICodeSample<EmbedAuthorProperties>, EmbedAuthorPropertiesSample>();
+builder.Services.AddSingleton<ICodeSample<EmbedFooterProperties>, EmbedFooterPropertiesSample>();
+builder.Services.AddSingleton<ICodeSample<EmbedFieldProperties>, EmbedFieldPropertiesSample>();
 
 builder.Services.AddSingleton<Builder>();
 
