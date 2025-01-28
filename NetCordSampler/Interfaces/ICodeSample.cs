@@ -1,7 +1,7 @@
 ﻿namespace NetCordSampler.Interfaces;
 
-public interface ICodeSample
+public interface ICodeSample<T> where T : class
 {
-    string BuildCodeSample(object netcordObject);
-    string QuickBuild(Type type);
+    string BuildCodeSample(T netcordObject);
+    string QuickBuild();
 }
