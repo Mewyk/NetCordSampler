@@ -9,7 +9,18 @@ public static class Builder
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-    public static string BuildCodeSample(object netcordObject, int indent = 0)
+    public static T CreateCustom<T>(Action<T> configure, Func<T, bool> isEmpty) where T : new()
+    {
+        var instance = new T();
+        configure(instance);
+
+        if (isEmpty(instance))
+            throw new ArgumentException("Requires at least one property to be set.");
+
+        return instance;
+    }
+
+    public static string BuildCodeSample<T>(T netcordObject, int indent = 0)
     {
         ArgumentNullException.ThrowIfNull(netcordObject);
 
@@ -17,7 +28,7 @@ public static class Builder
         var stringBuilder = new StringBuilder();
         var indentString = new string(' ', indent);
 
-        stringBuilder.AppendLine($"new {type.Name}()");
+        stringBuilder.AppendLine($"{indentString}new {type.Name}()");
         stringBuilder.AppendLine($"{indentString}{{");
 
         var properties = GetProperties(type);
@@ -62,7 +73,7 @@ public static class Builder
         {
             var comma = iterator == items.Count - 1 ? "" : ",";
             stringBuilder.AppendLine(
-                $"{new string(' ', indent + 4)}{BuildCodeSample(items[iterator], indent + 4)}{comma}");
+                $"{new string(' ', indent + 4)}{FormatValue(items[iterator], indent + 4)}{comma}");
         }
 
         stringBuilder.Append($"{new string(' ', indent)}]");

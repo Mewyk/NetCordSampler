@@ -1,27 +1,26 @@
+using Microsoft.Extensions.Configuration;
 using NetCord.Rest;
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFooterCodeSample : ICodeSample
+public class EmbedFooterCodeSample : ICodeSample<EmbedFooterProperties>
 {
-    private static readonly Func<EmbedFooterProperties> DefaultFooter = () => new EmbedFooterProperties
+    public static EmbedFooterProperties CreateDefault() => new()
     {
-        Text = "Example Footer",
-        IconUrl = "https://example.com/footer.png"
+        Text = "Default Footer Text",
+        IconUrl = "https://example.com/default-footer-icon.png"
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault());
 
-    public static EmbedFooterProperties GetDefault()
-        => DefaultFooter();
+    public static EmbedFooterProperties CreateCustom(Action<EmbedFooterProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedFooterProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedFooterProperties footer) =>
+        string.IsNullOrEmpty(footer.Text) &&
+        string.IsNullOrEmpty(footer.IconUrl);
 
-        return Builder.BuildCodeSample(DefaultFooter());
-    }
+    public string BuildCodeSample(EmbedFooterProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }

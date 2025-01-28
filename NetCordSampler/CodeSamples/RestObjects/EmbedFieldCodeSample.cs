@@ -3,26 +3,25 @@ using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFieldCodeSample : ICodeSample
+public class EmbedFieldCodeSample : ICodeSample<EmbedFieldProperties>
 {
-    private static readonly Func<EmbedFieldProperties> DefaultField = () => new EmbedFieldProperties
+    public static EmbedFieldProperties CreateDefault() => new()
     {
-        Name = "Field Name",
-        Value = "Field Value",
-        Inline = true
+        Name = "Default Field Name",
+        Value = "Default Field Value",
+        Inline = false
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault());
 
-    public static EmbedFieldProperties GetDefault()
-        => DefaultField();
+    public static EmbedFieldProperties CreateCustom(Action<EmbedFieldProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedFieldProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedFieldProperties field) =>
+        string.IsNullOrEmpty(field.Name) &&
+        string.IsNullOrEmpty(field.Value) &&
+        !field.Inline;
 
-        return Builder.BuildCodeSample(DefaultField());
-    }
+    public string BuildCodeSample(EmbedFieldProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }
