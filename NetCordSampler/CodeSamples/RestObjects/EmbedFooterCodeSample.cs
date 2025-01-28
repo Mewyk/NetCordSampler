@@ -1,18 +1,23 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFooterCodeSample : ICodeSample<EmbedFooterProperties>
+public class EmbedFooterCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedFooterProperties>
 {
-    public static EmbedFooterProperties CreateDefault() => new()
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedFooterProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Text = "Default Footer Text",
-        IconUrl = "https://example.com/default-footer-icon.png"
+        Text = samplerSettings.DefaultValues.MissingDescription,
+        IconUrl = samplerSettings.DefaultValues.Urls.Thumbnail
     };
 
-    public string QuickBuild() => BuildCodeSample(CreateDefault());
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
     public static EmbedFooterProperties CreateCustom(Action<EmbedFooterProperties> configuration) =>
         Builder.CreateCustom(configuration, IsEmpty);

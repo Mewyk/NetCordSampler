@@ -1,18 +1,24 @@
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFieldCodeSample : ICodeSample<EmbedFieldProperties>
+public class EmbedFieldCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedFieldProperties>
 {
-    public static EmbedFieldProperties CreateDefault() => new()
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedFieldProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Name = "Default Field Name",
-        Value = "Default Field Value",
+        Name = samplerSettings.DefaultValues.MissingTitle,
+        Value = samplerSettings.DefaultValues.MissingDescription,
         Inline = false
     };
 
-    public string QuickBuild() => BuildCodeSample(CreateDefault());
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
     public static EmbedFieldProperties CreateCustom(Action<EmbedFieldProperties> configuration) =>
         Builder.CreateCustom(configuration, IsEmpty);

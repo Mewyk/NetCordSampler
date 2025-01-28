@@ -1,18 +1,24 @@
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedAuthorCodeSample : ICodeSample<EmbedAuthorProperties>
+public class EmbedAuthorCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedAuthorProperties>
 {
-    public static EmbedAuthorProperties CreateDefault() => new()
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedAuthorProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Name = "Default Author Name",
-        IconUrl = "https://example.com/default-author-icon.png",
-        Url = "https://example.com/author"
+        Name = samplerSettings.DefaultValues.MissingTitle,
+        IconUrl = samplerSettings.DefaultValues.Urls.Thumbnail,
+        Url = samplerSettings.DefaultValues.Urls.Website
     };
 
-    public string QuickBuild() => BuildCodeSample(CreateDefault());
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
     public static EmbedAuthorProperties CreateCustom(Action<EmbedAuthorProperties> configuration) =>
         Builder.CreateCustom(configuration, IsEmpty);
