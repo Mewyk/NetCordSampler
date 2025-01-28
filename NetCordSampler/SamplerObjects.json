@@ -1,0 +1,34 @@
+[
+  {
+    "Namespace": "",
+    "Name": "",
+    "Description": "",
+    "SourceSummary": "",
+    "LastUpdated": null,
+    "Limitations": null,
+    "Properties": []
+  },
+  {
+    "Namespace": "",
+    "Name": "",
+    "Description": "",
+    "SourceSummary": "",
+    "LastUpdated": null,
+    "Limitations": {
+      "Name": "",
+      "Description": "",
+      "Value": "",
+      "Min": 0,
+      "Max": 0
+    },
+    "Properties": [
+      {
+        "Name": "",
+        "Type": "",
+        "Description": "",
+        "LastUpdated": null,
+        "Limitations": null
+      }
+    ]
+  }
+]
