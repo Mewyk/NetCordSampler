@@ -1,39 +1,51 @@
-﻿using NetCord.Rest;
+﻿using Microsoft.Extensions.Options;
+
+using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedCodeSample : ICodeSample
+public class EmbedCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedProperties>
 {
-    private static readonly Func<EmbedProperties> DefaultEmbed = () => new EmbedProperties
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Title = "Embed Title",
-        Description = "Embed Description",
-        Color = new(0x7289DA),
+        Title = "Default Title", // samplerSettings.DefaultValues.MissingTitle
+        Description = "Default Description", // samplerSettings.DefaultValues.MissingDescription
+        Color = new(0xFF00FF),
         Timestamp = DateTimeOffset.UtcNow,
-        Image = "https://example.com/image.png",
-        Thumbnail = "https://example.com/thumbnail.png",
-        Url = "https://example.com",
-        Author = EmbedAuthorCodeSample.GetDefault(),
-        Footer = EmbedFooterCodeSample.GetDefault(),
+        Image = samplerSettings.DefaultValues.Urls.Image,
+        Thumbnail = samplerSettings.DefaultValues.Urls.Thumbnail,
+        Url = samplerSettings.DefaultValues.Urls.Website,
+        Author = EmbedAuthorCodeSample.CreateDefault(samplerSettings),
+        Footer = EmbedFooterCodeSample.CreateDefault(samplerSettings),
         Fields =
         [
-            EmbedFieldCodeSample.GetDefault(),
-            EmbedFieldCodeSample.GetDefault()
+            EmbedFieldCodeSample.CreateDefault(samplerSettings),
+            EmbedFieldCodeSample.CreateDefault(samplerSettings)
         ]
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
-    public static EmbedProperties GetDefault()
-        => DefaultEmbed();
+    public static EmbedProperties CreateCustom(Action<EmbedProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedProperties embed) =>
+        string.IsNullOrEmpty(embed.Title) &&
+        string.IsNullOrEmpty(embed.Description) &&
+        string.IsNullOrEmpty(embed.Url) &&
+        embed.Timestamp == default &&
+        embed.Color.RawValue == 0 &&
+        embed.Author == null &&
+        embed.Footer == null &&
+        embed.Image == null &&
+        embed.Thumbnail == null &&
+        (embed.Fields == null || !embed.Fields.Any());
 
-        return Builder.BuildCodeSample(DefaultEmbed());
-    }
+    public string BuildCodeSample(EmbedProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }

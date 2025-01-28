@@ -1,27 +1,31 @@
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFooterCodeSample : ICodeSample
+public class EmbedFooterCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedFooterProperties>
 {
-    private static readonly Func<EmbedFooterProperties> DefaultFooter = () => new EmbedFooterProperties
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedFooterProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Text = "Example Footer",
-        IconUrl = "https://example.com/footer.png"
+        Text = samplerSettings.DefaultValues.MissingDescription,
+        IconUrl = samplerSettings.DefaultValues.Urls.Thumbnail
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
-    public static EmbedFooterProperties GetDefault()
-        => DefaultFooter();
+    public static EmbedFooterProperties CreateCustom(Action<EmbedFooterProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedFooterProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedFooterProperties footer) =>
+        string.IsNullOrEmpty(footer.Text) &&
+        string.IsNullOrEmpty(footer.IconUrl);
 
-        return Builder.BuildCodeSample(DefaultFooter());
-    }
+    public string BuildCodeSample(EmbedFooterProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }

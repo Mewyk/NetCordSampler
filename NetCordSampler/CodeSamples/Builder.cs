@@ -9,7 +9,18 @@ public static class Builder
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-    public static string BuildCodeSample(object netcordObject, int indent = 0)
+    public static T CreateCustom<T>(Action<T> configure, Func<T, bool> isEmpty) where T : new()
+    {
+        var instance = new T();
+        configure(instance);
+
+        if (isEmpty(instance))
+            throw new ArgumentException("Requires at least one property to be set.");
+
+        return instance;
+    }
+
+    public static string BuildCodeSample<T>(T netcordObject, int indent = 0)
     {
         ArgumentNullException.ThrowIfNull(netcordObject);
 
@@ -21,13 +32,24 @@ public static class Builder
         stringBuilder.AppendLine($"{indentString}{{");
 
         var properties = GetProperties(type);
-        var nonNullProps = properties.Where(property => property.GetValue(netcordObject) is not null).ToList();
-        for (int iterator = 0; iterator < nonNullProps.Count; iterator++)
+        var nonDefaultProps = properties.Where(property =>
         {
-            var property = nonNullProps[iterator];
+            var value = property.GetValue(netcordObject);
+            if (value is null)
+                return false;
+
+            if (property.PropertyType.IsValueType)
+                return !value.Equals(Activator.CreateInstance(property.PropertyType));
+
+            return true;
+        }).ToList();
+
+        for (int iterator = 0; iterator < nonDefaultProps.Count; iterator++)
+        {
+            var property = nonDefaultProps[iterator];
             var value = property.GetValue(netcordObject);
             string formattedValue = FormatValue(value!, indent + 4);
-            var comma = iterator == nonNullProps.Count - 1 ? "" : ",";
+            var comma = iterator == nonDefaultProps.Count - 1 ? "" : ",";
             stringBuilder.AppendLine($"{indentString}    {property.Name} = {formattedValue}{comma}");
         }
 
@@ -43,11 +65,12 @@ public static class Builder
     {
         return value switch
         {
-            string str => $"\"{str}\"",
+            string stringValue => $"\"{stringValue}\"",
             DateTimeOffset offset => $"DateTimeOffset.Parse(\"{offset:O}\")",
             Color color => $"new({color.RawValue})",
             IEnumerable<object> collection => FormatCollection(collection, indent),
-            var netcordObject when netcordObject.GetType().IsClass && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
+            var netcordObject when netcordObject.GetType().IsClass 
+                && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
                 => BuildCodeSample(netcordObject, indent),
             _ => value.ToString() ?? string.Empty
         };
@@ -62,7 +85,7 @@ public static class Builder
         {
             var comma = iterator == items.Count - 1 ? "" : ",";
             stringBuilder.AppendLine(
-                $"{new string(' ', indent + 4)}{BuildCodeSample(items[iterator], indent + 4)}{comma}");
+                $"{new string(' ', indent + 4)}{FormatValue(items[iterator], indent + 4)}{comma}");
         }
 
         stringBuilder.Append($"{new string(' ', indent)}]");

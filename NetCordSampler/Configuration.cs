@@ -6,10 +6,10 @@ namespace NetCordSampler;
 public class Configuration
 {
     [Required]
-    public required DiscordSettings? Discord { get; set; }
+    public required DiscordSettings Discord { get; set; }
 
     [Required]
-    public required CodeSamplesSettings? CodeSamples { get; set; }
+    public required SamplerSettings Settings { get; set; }
 }
 
 // Discord settings
@@ -22,11 +22,11 @@ public class DiscordSettings
     public required string[] Intents { get; set; }
 }
 
-// CodeSamples settings
-public class CodeSamplesSettings
+// Settings settings
+public class SamplerSettings
 {
     [Required]
-    public required DefaultValues.Url? DefaultUrls { get; set; }
+    public required Defaults DefaultValues { get; set; }
 
     [Required]
     public required UserInterface.Search SearchInterface { get; set; }
@@ -41,27 +41,39 @@ public class CodeSamplesSettings
     {
         public class Search
         {
+            [Required]
             public required int EmbedColor { get; set; }
         }
 
         public class Browse
         {
+            [Required]
             public required int EmbedColor { get; set; }
         }
 
         public class Builder
         {
+            [Required]
             public required int EmbedColor { get; set; }
         }
     }
 
-    public class DefaultValues
+    public class Defaults
     {
+        [Required]
+        public required string MissingTitle { get; set; }
+
         [Required]
         public required string MissingDescription { get; set; }
 
+        [Required]
+        public required Url Urls { get; set; }
+
         public class Url
         {
+            [Required]
+            public required string Website { get; set; }
+
             [Required]
             public required string Thumbnail { get; set; }
 

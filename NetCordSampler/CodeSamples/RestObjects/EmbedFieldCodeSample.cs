@@ -1,28 +1,33 @@
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedFieldCodeSample : ICodeSample
+public class EmbedFieldCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedFieldProperties>
 {
-    private static readonly Func<EmbedFieldProperties> DefaultField = () => new EmbedFieldProperties
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedFieldProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Name = "Field Name",
-        Value = "Field Value",
-        Inline = true
+        Name = samplerSettings.DefaultValues.MissingTitle,
+        Value = samplerSettings.DefaultValues.MissingDescription,
+        Inline = false
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
-    public static EmbedFieldProperties GetDefault()
-        => DefaultField();
+    public static EmbedFieldProperties CreateCustom(Action<EmbedFieldProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedFieldProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedFieldProperties field) =>
+        string.IsNullOrEmpty(field.Name) &&
+        string.IsNullOrEmpty(field.Value) &&
+        !field.Inline;
 
-        return Builder.BuildCodeSample(DefaultField());
-    }
+    public string BuildCodeSample(EmbedFieldProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }

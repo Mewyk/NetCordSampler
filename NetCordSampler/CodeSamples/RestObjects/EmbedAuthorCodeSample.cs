@@ -1,27 +1,33 @@
+using Microsoft.Extensions.Options;
+
 using NetCord.Rest;
+
 using NetCordSampler.Interfaces;
 
 namespace NetCordSampler.CodeSamples.RestObjects;
 
-public class EmbedAuthorCodeSample : ICodeSample
+public class EmbedAuthorCodeSample(
+    IOptions<SamplerSettings> settings) : ICodeSample<EmbedAuthorProperties>
 {
-    private static readonly Func<EmbedAuthorProperties> DefaultAuthor = () => new EmbedAuthorProperties
+    private readonly SamplerSettings _settings = settings.Value;
+
+    public static EmbedAuthorProperties CreateDefault(SamplerSettings samplerSettings) => new()
     {
-        Name = "Example Author",
-        IconUrl = "https://example.com/author.png"
+        Name = samplerSettings.DefaultValues.MissingTitle,
+        IconUrl = samplerSettings.DefaultValues.Urls.Thumbnail,
+        Url = samplerSettings.DefaultValues.Urls.Website
     };
 
-    public string BuildCodeSample(object netcordObject)
-        => Builder.BuildCodeSample(netcordObject);
+    public string QuickBuild() => BuildCodeSample(CreateDefault(_settings));
 
-    public static EmbedAuthorProperties GetDefault()
-        => DefaultAuthor();
+    public static EmbedAuthorProperties CreateCustom(Action<EmbedAuthorProperties> configuration) =>
+        Builder.CreateCustom(configuration, IsEmpty);
 
-    public string QuickBuild(Type type)
-    {
-        if (type != typeof(EmbedAuthorProperties))
-            throw new ArgumentException($"Unsupported type: {type.Name}");
+    private static bool IsEmpty(EmbedAuthorProperties author) =>
+        string.IsNullOrEmpty(author.Name) &&
+        string.IsNullOrEmpty(author.IconUrl) &&
+        string.IsNullOrEmpty(author.Url);
 
-        return Builder.BuildCodeSample(DefaultAuthor());
-    }
+    public string BuildCodeSample(EmbedAuthorProperties netcordObject) =>
+        Builder.BuildCodeSample(netcordObject);
 }
