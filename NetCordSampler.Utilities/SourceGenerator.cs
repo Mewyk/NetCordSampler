@@ -1,30 +1,31 @@
 using System.Text;
-using System.Collections.Immutable;
 
 namespace NetCordSampler.Utilities;
 
 public static class SourceGenerator
 {
-    public static string GenerateEnum(ImmutableDictionary<string, ImmutableDictionary<string, PropertyInformation>> data)
+    public static string GenerateEnum(IEnumerable<SampleObject> sampleObjects)
     {
         var sourceBuilder = new StringBuilder()
             .AppendLine("namespace NetCordSampler.Enums;\n")
             .AppendLine("public static class RestEnums\n{");
 
-        foreach (var (objectName, properties) in data)
-            sourceBuilder.AppendLine(BuildMainEnum(objectName, properties));
+        foreach (var sampleObject in sampleObjects)
+            sourceBuilder.AppendLine(
+                BuildMainEnum(sampleObject));
 
-        if (!data.IsEmpty)
-            sourceBuilder.AppendLine(BuildMasterEnum(data.Keys));
+        if (sampleObjects.Any())
+            sourceBuilder.AppendLine(
+                BuildMasterEnum(sampleObjects.Select(obj => obj.Name)));
 
         return sourceBuilder
             .AppendLine("}")
             .ToString();
     }
 
-    public static string GenerateImmutableSourceCode(ImmutableDictionary<string, ImmutableDictionary<string, PropertyInformation>> data)
+    public static string GenerateImmutableSourceCode(IEnumerable<SampleObject> sampleObjects)
     {
-        if (data.IsEmpty)
+        if (!sampleObjects.Any())
             return string.Empty;
 
         var immutableBuilder = new StringBuilder()
@@ -34,13 +35,17 @@ public static class SourceGenerator
             .AppendLine("\tpublic static readonly ImmutableDictionary<string, ImmutableArray<string>> Collections =")
             .AppendLine("\t\tImmutableDictionary.Create<string, ImmutableArray<string>>()");
 
-        var lastKey = data.Keys.Last();
-        foreach (var (objectName, properties) in data)
-        {
-            var propertyNames = properties.Keys.Select(name => $"\"{name}\"");
-            var addCodeLine = $"\t\t\t.Add(\"{objectName}\", [{string.Join(", ", propertyNames)}])";
+        var sampleObjectList = sampleObjects.ToList();
+        var lastObject = sampleObjectList.Last();
 
-            if (objectName == lastKey)
+        foreach (var sampleObject in sampleObjectList)
+        {
+            var propertyNames = sampleObject.Properties?
+                .Select(prop => $"\"{prop.Name}\"") ?? [];
+
+            var addCodeLine = $"\t\t\t.Add(\"{sampleObject.Name}\", [{string.Join(", ", propertyNames)}])";
+
+            if (sampleObject == lastObject)
                 addCodeLine += ";";
 
             immutableBuilder.AppendLine(addCodeLine);
@@ -51,32 +56,33 @@ public static class SourceGenerator
             .ToString();
     }
 
-    private static string BuildMainEnum(string objectName, ImmutableDictionary<string, PropertyInformation> properties)
+    private static string BuildMainEnum(SampleObject sampleObject)
     {
         var enumBuilder = new StringBuilder()
-            .AppendLine($"\tpublic enum {objectName}\n\t{{");
+            .AppendLine($"\tpublic enum {sampleObject.Name}\n\t{{");
 
-        int index = 0;
-        var propertiesList = properties.ToList();
-        foreach (var property in propertiesList)
+        var properties = sampleObject.Properties;
+        if (properties != null)
         {
-            index++;
-            var attributeBlock = new List<string>
+            int index = 0;
+            foreach (var property in properties)
             {
-                $"typeof({property.Value.Type})",
-                $"\"{property.Value.Summary}\""
-            };
+                index++;
+                var attributeBlock = new List<string>
+                {
+                    $"typeof({property.Type})",
+                    $"\"{property.Description}\""
+                };
 
-            enumBuilder
-                //.AppendLine($"\t\t[DiscordRules(null, null, null, null, null)]")
-                //.AppendLine($"\t\t[Summary(\"{property.Value.Summary}\")]")
-                .AppendLine($"\t\t[SamplerData({string.Join(", ", attributeBlock)})]")
-                .Append($"\t\t{property.Key}");
+                enumBuilder
+                    .AppendLine($"\t\t[SamplerData({string.Join(", ", attributeBlock)})]")
+                    .Append($"\t\t{property.Name}");
 
-            if (index < propertiesList.Count)
-                enumBuilder.AppendLine(",");
-            else 
-                enumBuilder.AppendLine();
+                if (index < properties.Count)
+                    enumBuilder.AppendLine(",");
+                else
+                    enumBuilder.AppendLine();
+            }
         }
 
         return enumBuilder
@@ -84,23 +90,9 @@ public static class SourceGenerator
             .ToString();
     }
 
-    private static string BuildMasterEnum(IEnumerable<string> enumNames)
-    {
-        return new StringBuilder()
-            .AppendLine("\tpublic enum RestObjects\n\t{")
-            .AppendLine(string.Join(",\n", enumNames.Select(name => $"\t\t{name}")))
-            .AppendLine("\t}")
-            .ToString();
-    }
-}
-
-public class PropertyInformation
-{
-    private string type = string.Empty;
-    public string Summary { get; set; } = string.Empty;
-    public string Type 
-    { 
-        get => type.Replace("?", string.Empty); 
-        set => type = value; 
-    }
+    private static string BuildMasterEnum(IEnumerable<string> enumNames) => new StringBuilder()
+        .AppendLine("\tpublic enum RestObjects\n\t{")
+        .AppendLine(string.Join(",\n", enumNames.Select(name => $"\t\t{name}")))
+        .AppendLine("\t}")
+        .ToString();
 }
