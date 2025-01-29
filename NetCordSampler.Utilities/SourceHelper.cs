@@ -59,8 +59,8 @@ public static class SourceHelper
             {
                 Namespace = GetNamespace(typeSyntax),
                 Name = typeSyntax.Identifier.Text,
-                Description = GetTypeDescription(typeSyntax),
-                SourceSummary = GetTypeSummary(typeSyntax),
+                Description = GetTypeDescription(typeSyntax), // Temporary
+                SourceSummary = GetTypeDescription(typeSyntax), // GetTypeSummary(typeSyntax),
                 LastUpdated = DateTimeOffset.UtcNow,
                 Limitations = null,
                 Properties = GetProperties(typeSyntax)
@@ -100,8 +100,8 @@ public static class SourceHelper
     private static string GetTypeDescription(TypeDeclarationSyntax typeSyntax) =>
         Housekeeping.ParseXmlComment(GetXmlSummary(typeSyntax));
 
-    private static string GetTypeSummary(TypeDeclarationSyntax typeSyntax) =>
-        GetXmlSummary(typeSyntax);
+    /*private static string GetTypeSummary(TypeDeclarationSyntax typeSyntax) =>
+        GetXmlSummary(typeSyntax);*/
 
     private static string GetXmlSummary(SyntaxNode member) =>
         member
@@ -127,7 +127,8 @@ public static class SourceHelper
                 {
                     Name = propertySyntax.Identifier.Text,
                     Type = propertySyntax.Type.ToString(),
-                    Description = parsedSummary,
+                    Description = parsedSummary, // Temporary
+                    SourceSummary = parsedSummary,
                     LastUpdated = DateTimeOffset.UtcNow,
                     Limitations = null
                 };

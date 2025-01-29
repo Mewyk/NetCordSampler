@@ -25,19 +25,20 @@ public static class SampleHelper
 
         public string Namespace { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty; // Short description derived from xml summary
-        public string SourceSummary { get; set; } = string.Empty; // Summary from source code xml
-        public DateTimeOffset? LastUpdated { get; set; } // Object data last updated time
-        public Limitation? Limitations { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string SourceSummary { get; set; } = string.Empty;
+        public DateTimeOffset? LastUpdated { get; set; }
+        public ImmutableList<Limitation>? Limitations { get; set; } = [];
         public ImmutableList<Property>? Properties { get; set; } = [];
 
         public class Property
         {
             public string Name { get; set; } = string.Empty;
             public string Type { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty; // Short description derived from xml summary
-            public DateTimeOffset? LastUpdated { get; set; } // Property data last updated time
-            public Limitation? Limitations { get; set; }
+            public string Description { get; set; } = string.Empty;
+            public string SourceSummary { get; set; } = string.Empty;
+            public DateTimeOffset? LastUpdated { get; set; } = [];
+            public ImmutableList<Limitation>? Limitations { get; set; } = [];
         }
 
         public class Limitation
