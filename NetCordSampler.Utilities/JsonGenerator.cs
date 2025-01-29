@@ -38,7 +38,7 @@ public class SampleObject
         public string Type { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string SourceSummary { get; set; } = string.Empty;
-        public DateTimeOffset? LastUpdated { get; set; } = [];
+        public DateTimeOffset? LastUpdated { get; set; }
         public ImmutableList<Limitation>? Limitations { get; set; } = [];
     }
 
