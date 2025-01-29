@@ -52,8 +52,8 @@ public static class SampleHelper
     }
 
     public static InteractionMessageProperties CreateQuickBuildMessage(
-        string sampleSelection, SamplerSettings settings, 
-        SlashCommandContext context, Builder builder)
+        string sampleSelection, SamplerSettings settings,
+        ApplicationCommandContext context, Builder builder)
     {
         var sample = Samples.FirstOrDefault(sample =>
             sample.Name.Equals(sampleSelection, StringComparison.OrdinalIgnoreCase)) 

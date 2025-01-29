@@ -10,9 +10,9 @@ namespace NetCordSampler.Modules;
 
 public class CoreCommandModule(
     IOptions<Configuration> settings, Builder builder) 
-    : ApplicationCommandModule<SlashCommandContext>
+    : ApplicationCommandModule<ApplicationCommandContext>
 {
-    private readonly IOptions<Configuration> _settings = settings;
+    private readonly SamplerSettings _settings = settings.Value.Sampler;
     private readonly Builder _builder = builder;
 
     [SlashCommand("search", "Search and customize NetCord samples",
@@ -26,10 +26,9 @@ public class CoreCommandModule(
                 AutocompleteProviderType = typeof(SearchSamplesAutocompleteProvider))]
             string sampleSelection)
     {
-        var settings = _settings?.Value?.Settings;
-        return settings == null
+        return _settings == null
             ? throw new ArgumentNullException(nameof(sampleSelection), "SamplerSettings cannot be null")
-            : SampleHelper.CreateQuickBuildMessage(sampleSelection, settings, Context, _builder);
+            : SampleHelper.CreateQuickBuildMessage(sampleSelection, _settings, Context, _builder);
     }
 
     private class SearchSamplesAutocompleteProvider : IAutocompleteProvider<AutocompleteInteractionContext>

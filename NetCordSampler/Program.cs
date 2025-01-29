@@ -26,11 +26,6 @@ builder.Services
     .ValidateDataAnnotations();
 
 builder.Services
-    .AddOptions<SamplerSettings>()
-    .Bind(builder.Configuration)
-    .ValidateDataAnnotations();
-
-builder.Services
     .AddHttpClient();
 
 builder.Services

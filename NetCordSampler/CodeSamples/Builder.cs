@@ -8,9 +8,9 @@ using NetCord;
 
 namespace NetCordSampler.CodeSamples;
 
-public class Builder(IOptions<SamplerSettings> options)
+public class Builder(IOptions<Configuration> settings)
 {
-    private readonly SamplerSettings _settings = options.Value;
+    private readonly SamplerSettings _settings = settings.Value.Sampler;
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();
 
     public string QuickBuild<T>() where T : class, new()

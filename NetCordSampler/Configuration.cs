@@ -9,7 +9,7 @@ public class Configuration
     public required DiscordSettings Discord { get; set; }
 
     [Required]
-    public required SamplerSettings Settings { get; set; }
+    public required SamplerSettings Sampler { get; set; }
 }
 
 // Discord settings
@@ -22,7 +22,7 @@ public class DiscordSettings
     public required string[] Intents { get; set; }
 }
 
-// Settings settings
+// Sampler settings
 public class SamplerSettings
 {
     [Required]
