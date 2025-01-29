@@ -18,7 +18,11 @@ public static class SampleHelper
 
     public class SampleObject
     {
-        public string FullName { get; set; } = string.Empty;
+        public string FullName =>
+            string.IsNullOrEmpty(Namespace)
+            ? Name
+            : $"{Namespace}.{Name}";
+
         public string Namespace { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty; // Short description derived from xml summary
