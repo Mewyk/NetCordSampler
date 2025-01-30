@@ -38,17 +38,6 @@ public class Builder(IOptions<Configuration> settings)
         return BuildCodeSample(netcordObject);
     }
 
-    public static T CreateCustom<T>(Action<T> configure, Func<T, bool> isEmpty) where T : new()
-    {
-        var instance = new T();
-        configure(instance);
-
-        if (isEmpty(instance))
-            throw new ArgumentException("Requires at least one property to be set");
-
-        return instance;
-    }
-
     public string BuildCodeSample<T>(T netcordObject, int indent = 0)
     {
         ArgumentNullException.ThrowIfNull(netcordObject);
