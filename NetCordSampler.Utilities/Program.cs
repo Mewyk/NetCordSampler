@@ -17,11 +17,11 @@ internal static class Program
         await File.WriteAllTextAsync(jsonOutputPath, jsonContent);
 
         // Enums
-        var enumSourceCode = SourceGenerator.GenerateEnum(sampleObjects);
+        var enumSourceCode = SourceBuilder.GenerateEnum(sampleObjects);
         File.WriteAllText(enumsOutputPath, enumSourceCode);
 
         // Immutable
-        var immutableSourceCode = SourceGenerator.GenerateImmutableSourceCode(sampleObjects);
+        var immutableSourceCode = SourceBuilder.GenerateImmutableSourceCode(sampleObjects);
         File.WriteAllText(collectionsOutputPath, immutableSourceCode);
     }
 }
