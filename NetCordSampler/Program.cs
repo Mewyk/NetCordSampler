@@ -17,6 +17,7 @@ using NetCordSampler;
 using NetCordSampler.CodeSamples;
 using NetCordSampler.CodeSamples.RestObjects;
 using NetCordSampler.Interfaces;
+using NetCordSampler.Modules;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -61,12 +62,12 @@ var host = builder.Build()
 var builderInstance = host.Services.GetRequiredService<Builder>();
 var samplerSettings = host.Services.GetRequiredService<IOptions<SamplerSettings>>().Value;
 
-await GenerateExamples(builderInstance);
+await GenerateExamples(builderInstance, samplerSettings);
 
 await host.RunAsync();
 
 // NOTE: Below is just temporary for quick testing purposes
-static Task GenerateExamples(Builder builder)
+static Task GenerateExamples(Builder builder, SamplerSettings settings)
 {
     // Simple custom embed code sample (few options used)
     var simpleCustomEmbedCode = builder.CustomBuild<EmbedProperties>(embed =>
@@ -121,6 +122,11 @@ static Task GenerateExamples(Builder builder)
     Console.WriteLine("\nQuickBuild Embed Output:");
     var quickBuildEmbedCode = builder.QuickBuild<EmbedProperties>();
     Console.WriteLine(quickBuildEmbedCode);
+
+    // Test CreateQuickBuildMessage
+    Console.WriteLine("\nCreateQuickBuildMessage Output:");
+    var quickBuildMessage = SampleHelper.CreateQuickBuildMessage("EmbedProperties", builder, settings);
+    Console.WriteLine(quickBuildMessage.Content);
 
     return Task.CompletedTask;
 }

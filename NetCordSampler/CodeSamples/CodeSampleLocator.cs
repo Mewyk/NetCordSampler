@@ -6,7 +6,7 @@ namespace NetCordSampler.CodeSamples;
 
 public static class CodeSampleLocator
 {
-    private static readonly Dictionary<Type, object> _codeSamples = new();
+    private static readonly Dictionary<Type, object> _codeSamples = [];
 
     static CodeSampleLocator()
     {

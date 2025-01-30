@@ -23,26 +23,60 @@ public class Builder(IOptions<Configuration> settings)
             codeSample.CreateDefault(_settings));
     }
 
+    public string QuickBuild(string typeName)
+    {
+        if (string.IsNullOrEmpty(typeName))
+            throw new ArgumentNullException(nameof(typeName));
+
+        var targetType = FindTypeByName(typeName) 
+            ?? throw new ArgumentException($"{typeName} not found", nameof(typeName));
+        
+        if (!targetType.IsClass)
+            throw new ArgumentException($"{typeName} is not a class", nameof(typeName));
+
+        if (targetType.GetConstructor(Type.EmptyTypes) == null)
+            throw new ArgumentException($"{typeName} does not have a parameterless constructor", nameof(typeName));
+
+        var methodInfo = typeof(Builder).GetMethod(nameof(QuickBuild), Type.EmptyTypes) 
+            ?? throw new InvalidOperationException("Method QuickBuild<> not found");
+        
+        var genericMethod = methodInfo.MakeGenericMethod(targetType);
+
+        return (string?)genericMethod.Invoke(this, null) 
+            ?? throw new InvalidOperationException("Returned null");
+    }
+
+    private static Type? FindTypeByName(string typeName)
+    {
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        foreach (var assembly in assemblies)
+        {
+            var type = assembly.GetTypes().FirstOrDefault(t => t.Name.Equals(typeName, StringComparison.Ordinal));
+            if (type != null)
+                return type;
+        }
+        return null;
+    }
+
     public string CustomBuild<T>(Action<T> configure) where T : class, new()
     {
-        var netcordObject = new T();
-        configure(netcordObject);
+        var sampleType = new T();
+        configure(sampleType);
 
         var codeSample = CodeSampleLocator.GetCodeSample<T>()
             ?? throw new InvalidOperationException(
                 $"No ICodeSample<{typeof(T).Name}> found for type {typeof(T).Name}");
 
-        if (codeSample.IsEmpty(netcordObject))
-            throw new ArgumentException("Requires at least one property to be set");
-
-        return BuildCodeSample(netcordObject);
+        return codeSample.IsEmpty(sampleType)
+            ? throw new ArgumentException("Requires at least one property to be set")
+            : BuildCodeSample(sampleType);
     }
 
-    public string BuildCodeSample<T>(T netcordObject, int indent = 0)
+    public string BuildCodeSample<T>(T sampleType, int indent = 0)
     {
-        ArgumentNullException.ThrowIfNull(netcordObject);
+        ArgumentNullException.ThrowIfNull(sampleType);
 
-        var type = netcordObject.GetType();
+        var type = sampleType.GetType();
         var stringBuilder = new StringBuilder();
         var indentString = new string(' ', indent);
 
@@ -52,7 +86,7 @@ public class Builder(IOptions<Configuration> settings)
         var properties = GetProperties(type);
         var nonDefaultProps = properties.Where(property =>
         {
-            var value = property.GetValue(netcordObject);
+            var value = property.GetValue(sampleType);
             if (value is null)
                 return false;
 
@@ -65,7 +99,7 @@ public class Builder(IOptions<Configuration> settings)
         for (int iterator = 0; iterator < nonDefaultProps.Count; iterator++)
         {
             var property = nonDefaultProps[iterator];
-            var value = property.GetValue(netcordObject);
+            var value = property.GetValue(sampleType);
             string formattedValue = FormatValue(value!, indent + 4);
             var comma = iterator == nonDefaultProps.Count - 1 ? "" : ",";
             stringBuilder.AppendLine($"{indentString}    {property.Name} = {formattedValue}{comma}");
@@ -79,20 +113,17 @@ public class Builder(IOptions<Configuration> settings)
         PropertyCache.GetOrAdd(targetType, type =>
             type.GetProperties(BindingFlags.Public | BindingFlags.Instance));
 
-    private string FormatValue(object value, int indent)
+    private string FormatValue(object value, int indent) => value switch
     {
-        return value switch
-        {
-            string stringValue => $"\"{stringValue}\"",
-            DateTimeOffset offset => $"DateTimeOffset.Parse(\"{offset:O}\")",
-            Color color => $"new({color.RawValue})",
-            IEnumerable<object> collection => FormatCollection(collection, indent),
-            var netcordObject when netcordObject.GetType().IsClass
-                && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
-                => BuildCodeSample(netcordObject, indent),
-            _ => value.ToString() ?? string.Empty
-        };
-    }
+        string stringValue => $"\"{stringValue}\"",
+        DateTimeOffset offset => $"DateTimeOffset.Parse(\"{offset:O}\")",
+        Color color => $"new({color.RawValue})",
+        IEnumerable<object> collection => FormatCollection(collection, indent),
+        var netcordObject when netcordObject.GetType().IsClass
+            && netcordObject.GetType().Namespace?.StartsWith("NetCord") == true
+            => BuildCodeSample(netcordObject, indent),
+        _ => value.ToString() ?? string.Empty
+    };
 
     private string FormatCollection(IEnumerable<object> collection, int indent)
     {

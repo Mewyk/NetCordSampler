@@ -10,7 +10,7 @@ public class EmbedPropertiesSample : ICodeSample<EmbedProperties>
     {
         Title = settings.DefaultValues.MissingTitle,
         Description = settings.DefaultValues.MissingDescription,
-        Color = new(0xFF00FF),
+        Color = new(0xFF00FF), 
         Timestamp = DateTimeOffset.UtcNow,
         Image = settings.DefaultValues.Urls.Image,
         Thumbnail = settings.DefaultValues.Urls.Thumbnail,

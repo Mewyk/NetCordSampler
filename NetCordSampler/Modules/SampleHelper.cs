@@ -2,7 +2,6 @@
 using System.Text.Json;
 
 using NetCord.Rest;
-using NetCord.Services.ApplicationCommands;
 
 using NetCordSampler.CodeSamples;
 
@@ -10,7 +9,7 @@ namespace NetCordSampler.Modules;
 
 public static class SampleHelper
 {
-    private static readonly ImmutableList<SampleObject> Samples;
+    public static readonly ImmutableList<SampleObject> Samples;
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -50,40 +49,14 @@ public static class SampleHelper
             public int Max { get; set; }
         }
     }
-
+    
     public static InteractionMessageProperties CreateQuickBuildMessage(
-        string sampleSelection, SamplerSettings settings,
-        ApplicationCommandContext context, Builder builder)
+        string sampleSelection, Builder builder, SamplerSettings settings)
     {
-        var sample = Samples.FirstOrDefault(sample =>
-            sample.Name.Equals(sampleSelection, StringComparison.OrdinalIgnoreCase)) 
-            ?? throw new ArgumentException($"{sampleSelection} not found");
-
-        var fullTypeName = $"{sample.Namespace}.{sample.Name}";
-
-        // Untested
-        var type = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(assembly => assembly.GetTypes())
-            .FirstOrDefault(type => type.FullName == fullTypeName) 
-            ?? throw new InvalidOperationException(
-                $"{sample.Name} not in namespace {sample.Namespace}");
-
-        /*var type = Type.GetType($"{sample.Namespace}.{sample.Name}") 
-            ?? throw new InvalidOperationException(
-                $"{sample.Name} not in namespace {sample.Namespace}");*/
-
-        var netcordObject = Activator.CreateInstance(type) 
-            ?? throw new InvalidOperationException(
-                $"Failed to create an instance of {type.FullName}");
-
-        string codeSample = builder.BuildCodeSample(netcordObject, indent: 4);
+        string codeSample = builder.QuickBuild(sampleSelection);
 
         return new InteractionMessageProperties()
-            .WithContent($"```CSharp\n{codeSample}\n```")               
-            .AddEmbeds(new EmbedProperties()
-            {
-
-            });
+            .WithContent($"{codeSample}");
     }
 
     static SampleHelper()
