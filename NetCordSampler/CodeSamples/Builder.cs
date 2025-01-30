@@ -72,7 +72,7 @@ public class Builder(IOptions<Configuration> settings)
             : BuildCodeSample(sampleType);
     }
 
-    public string BuildCodeSample<T>(T sampleType, int indent = 0)
+    private string BuildCodeSample<T>(T sampleType, int indent = 0)
     {
         ArgumentNullException.ThrowIfNull(sampleType);
 
@@ -100,7 +100,24 @@ public class Builder(IOptions<Configuration> settings)
         {
             var property = nonDefaultProps[iterator];
             var value = property.GetValue(sampleType);
-            string formattedValue = FormatValue(value!, indent + 4);
+
+            // TODO: Handle special formatting elsewhere
+            string formattedValue;
+            if (property.Name == "Image" || property.Name == "Thumbnail")
+            {
+                if (value is not null)
+                {
+                    var urlProperty = value.GetType().GetProperty("Url");
+                    var urlValue = urlProperty?.GetValue(value) as string ?? string.Empty;
+                    formattedValue = $"\"{urlValue}\"";
+                }
+                else formattedValue = "null";
+            }
+            else
+            {
+                formattedValue = FormatValue(value!, indent + 4);
+            }
+
             var comma = iterator == nonDefaultProps.Count - 1 ? "" : ",";
             stringBuilder.AppendLine($"{indentString}    {property.Name} = {formattedValue}{comma}");
         }

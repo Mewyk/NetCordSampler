@@ -56,7 +56,7 @@ public static class SampleHelper
         string codeSample = builder.QuickBuild(sampleSelection);
 
         return new InteractionMessageProperties()
-            .WithContent($"{codeSample}");
+            .WithContent($"```CSharp\n{codeSample}\n```");
     }
 
     static SampleHelper()
@@ -70,21 +70,23 @@ public static class SampleHelper
         var sampleList = JsonSerializer.Deserialize<ImmutableList<SampleObject>>(jsonContent, jsonOptions) ?? [];
 
         Samples = sampleList;
+
+        Console.WriteLine("SampleHelper init completed");
     }
 
-    public static ImmutableList<SampleObject> FindSamples(
+    public static ImmutableList<string> FindSamples(
         string value, int skip, int limit, out int total)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var filtered = Samples
-            .Where(sample => sample.Name.Contains(
-                value, StringComparison.OrdinalIgnoreCase))
+        var filteredNames = Samples
+            .Where(sample => sample.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
             .OrderBy(sample => sample.Name)
+            .Select(sample => sample.Name)
             .ToImmutableList();
 
-        total = filtered.Count;
-
-        return filtered.Skip(skip).Take(limit).ToImmutableList();
+        total = filteredNames.Count;
+        Console.WriteLine($"Total results: {total}");
+        return filteredNames.Skip(skip).Take(limit).ToImmutableList();
     }
 }

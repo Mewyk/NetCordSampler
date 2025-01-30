@@ -22,27 +22,32 @@ public class CoreCommandModule(
             Description = "Description",
             MaxLength = 90,
             AutocompleteProviderType = typeof(SearchSamplesAutocompleteProvider))]
-        string sampleSelection)
+        string sample)
     {
         return _settings == null
-            ? throw new ArgumentNullException(nameof(sampleSelection), "SamplerSettings cannot be null")
-            : SampleHelper.CreateQuickBuildMessage(sampleSelection, _builder, _settings);
+            ? throw new ArgumentNullException(nameof(sample), "SamplerSettings cannot be null")
+            : SampleHelper.CreateQuickBuildMessage(sample, _builder, _settings);
     }
 
-    private class SearchSamplesAutocompleteProvider : IAutocompleteProvider<AutocompleteInteractionContext>
+    public class SearchSamplesAutocompleteProvider : IAutocompleteProvider<AutocompleteInteractionContext>
     {
         public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(
             ApplicationCommandInteractionDataOption option,
             AutocompleteInteractionContext context)
         {
+            Console.WriteLine(context.Interaction.Data.Id);
+            Console.WriteLine(option.Options?.Count);
+            Console.WriteLine(option.Value?.ToString());
+
             var searchTerm = option.Value?.ToString() ?? string.Empty;
-            var samples = SampleHelper.FindSamples(searchTerm, 0, 25, out var total);
+            var sampleNames = SampleHelper.FindSamples(searchTerm, 0, 25, out var total);
+
             Console.WriteLine($"Found {total} results.");
 
-            var choices = samples.Select(source =>
+            var choices = sampleNames.Select(name =>
             {
-                string name = source.Name.Length > 90 ? source.Name[..90] : source.Name;
-                return new ApplicationCommandOptionChoiceProperties(name, name);
+                string displayName = name.Length > 90 ? name[..90] : name;
+                return new ApplicationCommandOptionChoiceProperties(displayName, name);
             });
 
             return new ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(choices);

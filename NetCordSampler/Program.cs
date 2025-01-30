@@ -30,7 +30,7 @@ builder.Services
     .AddHttpClient();
 
 builder.Services
-    .AddApplicationCommands<ApplicationCommandInteraction, ApplicationCommandContext>()
+    .AddApplicationCommands<SlashCommandInteraction, ApplicationCommandContext, AutocompleteInteractionContext>()
     .AddComponentInteractions<ButtonInteraction, ButtonInteractionContext>()
     .AddComponentInteractions<StringMenuInteraction, StringMenuInteractionContext>();
 
@@ -127,6 +127,14 @@ static Task GenerateExamples(Builder builder, SamplerSettings settings)
     Console.WriteLine("\nCreateQuickBuildMessage Output:");
     var quickBuildMessage = SampleHelper.CreateQuickBuildMessage("EmbedProperties", builder, settings);
     Console.WriteLine(quickBuildMessage.Content);
+
+    var searchTerm = "Em";
+    var samples = SampleHelper.FindSamples(searchTerm, 0, 25, out var total);
+
+    foreach (var sample in samples)
+    {
+        Console.WriteLine(sample);
+    }
 
     return Task.CompletedTask;
 }
