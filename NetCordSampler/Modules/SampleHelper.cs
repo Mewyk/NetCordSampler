@@ -70,23 +70,20 @@ public static class SampleHelper
         var sampleList = JsonSerializer.Deserialize<ImmutableList<SampleObject>>(jsonContent, jsonOptions) ?? [];
 
         Samples = sampleList;
-
-        Console.WriteLine("SampleHelper init completed");
     }
 
-    public static ImmutableList<string> FindSamples(
-        string value, int skip, int limit, out int total)
+    public static IEnumerable<string> FindSamples(
+            string value, int skip, int limit, out int total)
     {
         ArgumentNullException.ThrowIfNull(value);
 
         var filteredNames = Samples
             .Where(sample => sample.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(sample => sample.Name)
-            .Select(sample => sample.Name)
-            .ToImmutableList();
+            .OrderBy(sample => sample.Name.IndexOf(value, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(sample => sample.Name)
+            .Select(sample => sample.Name);
 
-        total = filteredNames.Count;
-        Console.WriteLine($"Total results: {total}");
-        return filteredNames.Skip(skip).Take(limit).ToImmutableList();
+        total = filteredNames.Count();
+        return filteredNames.Skip(skip).Take(limit);
     }
 }

@@ -35,15 +35,7 @@ public class CoreCommandModule(
             ApplicationCommandInteractionDataOption option,
             AutocompleteInteractionContext context)
         {
-            Console.WriteLine(context.Interaction.Data.Id);
-            Console.WriteLine(option.Options?.Count);
-            Console.WriteLine(option.Value?.ToString());
-
-            var searchTerm = option.Value?.ToString() ?? string.Empty;
-            var sampleNames = SampleHelper.FindSamples(searchTerm, 0, 25, out var total);
-
-            Console.WriteLine($"Found {total} results.");
-
+            var sampleNames = SampleHelper.FindSamples(option.Value!, 0, 25, out var total);
             var choices = sampleNames.Select(name =>
             {
                 string displayName = name.Length > 90 ? name[..90] : name;

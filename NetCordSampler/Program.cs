@@ -128,13 +128,5 @@ static Task GenerateExamples(Builder builder, SamplerSettings settings)
     var quickBuildMessage = SampleHelper.CreateQuickBuildMessage("EmbedProperties", builder, settings);
     Console.WriteLine(quickBuildMessage.Content);
 
-    var searchTerm = "Em";
-    var samples = SampleHelper.FindSamples(searchTerm, 0, 25, out var total);
-
-    foreach (var sample in samples)
-    {
-        Console.WriteLine(sample);
-    }
-
     return Task.CompletedTask;
 }
