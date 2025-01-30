@@ -15,28 +15,16 @@ public class EmbedPropertiesSample : ICodeSample<EmbedProperties>
         Image = settings.DefaultValues.Urls.Image,
         Thumbnail = settings.DefaultValues.Urls.Thumbnail,
         Url = settings.DefaultValues.Urls.Website,
-        Author = CodeSampleLocator
-            .GetCodeSample<EmbedAuthorProperties>()?
-            .CreateDefault(settings) 
-            ?? throw new InvalidOperationException("Not found"),
-        Footer = CodeSampleLocator
-            .GetCodeSample<EmbedFooterProperties>()?
-            .CreateDefault(settings) 
-            ?? throw new InvalidOperationException("Not found"),
+        Author = new EmbedAuthorPropertiesSample().CreateDefault(settings),
+        Footer = new EmbedFooterPropertiesSample().CreateDefault(settings),
         Fields =
         [
-            CodeSampleLocator
-                .GetCodeSample<EmbedFieldProperties>()?
-                .CreateDefault(settings)
-                ?? throw new InvalidOperationException("Not found"),
-            CodeSampleLocator
-                .GetCodeSample<EmbedFieldProperties>()?
-                .CreateDefault(settings) 
-                ?? throw new InvalidOperationException("Not found")
+            new EmbedFieldPropertiesSample().CreateDefault(settings),
+            new EmbedFieldPropertiesSample().CreateDefault(settings)
         ]
     };
 
-    public bool IsEmpty(EmbedProperties embed) => 
+    public bool IsEmpty(EmbedProperties embed) =>
         string.IsNullOrEmpty(embed.Title) &&
         string.IsNullOrEmpty(embed.Description) &&
         string.IsNullOrEmpty(embed.Url) &&
