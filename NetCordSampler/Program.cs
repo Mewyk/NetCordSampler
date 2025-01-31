@@ -15,7 +15,7 @@ using NetCord.Services.ComponentInteractions;
 
 using NetCordSampler;
 using NetCordSampler.CodeSamples;
-using NetCordSampler.CodeSamples.RestObjects;
+using NetCordSampler.CodeSamples.Rest;
 using NetCordSampler.Interfaces;
 using NetCordSampler.Modules;
 

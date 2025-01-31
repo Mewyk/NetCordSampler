@@ -2,7 +2,7 @@ using NetCord.Rest;
 
 using NetCordSampler.Interfaces;
 
-namespace NetCordSampler.CodeSamples.RestObjects;
+namespace NetCordSampler.CodeSamples.Rest;
 
 public class EmbedFooterPropertiesSample : ICodeSample<EmbedFooterProperties>
 {
@@ -12,7 +12,7 @@ public class EmbedFooterPropertiesSample : ICodeSample<EmbedFooterProperties>
         IconUrl = settings.DefaultValues.Urls.Thumbnail
     };
 
-    public bool IsEmpty(EmbedFooterProperties footer) => 
+    public bool IsEmpty(EmbedFooterProperties footer) =>
         string.IsNullOrEmpty(footer.Text) &&
         string.IsNullOrEmpty(footer.IconUrl);
 }

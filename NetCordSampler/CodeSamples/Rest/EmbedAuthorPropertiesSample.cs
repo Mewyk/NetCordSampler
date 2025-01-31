@@ -2,7 +2,7 @@ using NetCord.Rest;
 
 using NetCordSampler.Interfaces;
 
-namespace NetCordSampler.CodeSamples.RestObjects;
+namespace NetCordSampler.CodeSamples.Rest;
 
 public class EmbedAuthorPropertiesSample : ICodeSample<EmbedAuthorProperties>
 {
@@ -13,7 +13,7 @@ public class EmbedAuthorPropertiesSample : ICodeSample<EmbedAuthorProperties>
         Url = settings.DefaultValues.Urls.Website
     };
 
-    public bool IsEmpty(EmbedAuthorProperties author) => 
+    public bool IsEmpty(EmbedAuthorProperties author) =>
         string.IsNullOrEmpty(author.Name) &&
         string.IsNullOrEmpty(author.IconUrl) &&
         string.IsNullOrEmpty(author.Url);

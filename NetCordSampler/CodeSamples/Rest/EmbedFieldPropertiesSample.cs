@@ -2,7 +2,7 @@ using NetCord.Rest;
 
 using NetCordSampler.Interfaces;
 
-namespace NetCordSampler.CodeSamples.RestObjects;
+namespace NetCordSampler.CodeSamples.Rest;
 
 public class EmbedFieldPropertiesSample : ICodeSample<EmbedFieldProperties>
 {
@@ -13,7 +13,7 @@ public class EmbedFieldPropertiesSample : ICodeSample<EmbedFieldProperties>
         Inline = false
     };
 
-    public bool IsEmpty(EmbedFieldProperties field) => 
+    public bool IsEmpty(EmbedFieldProperties field) =>
         string.IsNullOrEmpty(field.Name) &&
         string.IsNullOrEmpty(field.Value) &&
         !field.Inline;
