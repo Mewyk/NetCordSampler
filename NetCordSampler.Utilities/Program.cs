@@ -8,20 +8,27 @@ internal static class Program
         var enumsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestEnumeration.cs");
         var collectionsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestImmutable.cs");
         var jsonOutputPath = Path.Combine(AppContext.BaseDirectory, "SamplerObjects.json");
+        var samplesOutput = Path.Combine(AppContext.BaseDirectory, "CodeSamples");
+
+        if (!Directory.Exists(samplesOutput))
+            Directory.CreateDirectory(samplesOutput);
 
         var fileNames = await File.ReadAllLinesAsync(fileNamesPath);
-        var sampleObjects = await SourceHelper.GetSampleObjectsAsync(fileNames);
+        var sampleClasses = await SourceHelper.GetSampleObjectsAsync(fileNames);
 
-        // Json
-        var jsonContent = JsonGenerator.GenerateJson([.. sampleObjects]);
+        // Generate Json
+        var jsonContent = JsonGenerator.GenerateJson([.. sampleClasses]);
         await File.WriteAllTextAsync(jsonOutputPath, jsonContent);
 
-        // Enums
-        var enumSourceCode = SourceBuilder.GenerateEnum(sampleObjects);
+        // Generate Enums
+        var enumSourceCode = SourceBuilder.GenerateEnum(sampleClasses);
         File.WriteAllText(enumsOutputPath, enumSourceCode);
 
-        // Immutable
-        var immutableSourceCode = SourceBuilder.GenerateImmutableSourceCode(sampleObjects);
+        // Generate Immutable
+        var immutableSourceCode = SourceBuilder.GenerateImmutableSourceCode(sampleClasses);
         File.WriteAllText(collectionsOutputPath, immutableSourceCode);
+
+        // Generate CodeSamples
+        SourceBuilder.GenerateSampleSourceCode(sampleClasses, samplesOutput);
     }
 }

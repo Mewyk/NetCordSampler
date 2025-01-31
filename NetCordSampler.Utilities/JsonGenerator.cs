@@ -13,11 +13,11 @@ public static class JsonGenerator
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static string GenerateJson(List<SampleObject> sampleObjects) => 
+    public static string GenerateJson(List<SampleClass> sampleObjects) => 
         JsonSerializer.Serialize(sampleObjects, jsonOptions);
 }
 
-public class SampleObject
+public class SampleClass
 {
     public string FullName =>
         string.IsNullOrEmpty(Namespace)

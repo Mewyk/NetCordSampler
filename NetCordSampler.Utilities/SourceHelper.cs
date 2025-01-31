@@ -10,7 +10,7 @@ public static class SourceHelper
 {
     private static readonly HttpClient httpClient = new();
 
-    public static async Task<ImmutableArray<SampleObject>> GetSampleObjectsAsync(IEnumerable<string> fileNames)
+    public static async Task<ImmutableArray<SampleClass>> GetSampleObjectsAsync(IEnumerable<string> fileNames)
     {
         var tasks = fileNames.Select(async fileName =>
         {
@@ -45,7 +45,7 @@ public static class SourceHelper
         }
     }
 
-    private static SampleObject? ExtractSampleObject(string sourceCode)
+    private static SampleClass? ExtractSampleObject(string sourceCode)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
         var rootNode = syntaxTree.GetRoot();
@@ -55,7 +55,7 @@ public static class SourceHelper
             .FirstOrDefault();
 
         if (typeSyntax != null)
-            return new SampleObject
+            return new SampleClass
             {
                 Namespace = GetNamespace(typeSyntax),
                 Name = typeSyntax.Identifier.Text,
@@ -114,7 +114,7 @@ public static class SourceHelper
             .Select(element => element.Content.ToString())
             .FirstOrDefault() ?? string.Empty;
 
-    private static ImmutableList<SampleObject.Property>? GetProperties(TypeDeclarationSyntax typeSyntax)
+    private static ImmutableList<SampleClass.Property>? GetProperties(TypeDeclarationSyntax typeSyntax)
     {
         return typeSyntax.Members
             .OfType<PropertyDeclarationSyntax>()
@@ -123,7 +123,7 @@ public static class SourceHelper
                 var summaryText = GetXmlSummary(propertySyntax);
                 var parsedSummary = Housekeeping.ParseXmlComment(summaryText);
 
-                return new SampleObject.Property
+                return new SampleClass.Property
                 {
                     Name = propertySyntax.Identifier.Text,
                     Type = propertySyntax.Type.ToString(),
