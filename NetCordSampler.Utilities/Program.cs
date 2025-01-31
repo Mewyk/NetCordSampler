@@ -8,7 +8,7 @@ internal static class Program
         var enumsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestEnumeration.cs");
         var collectionsOutputPath = Path.Combine(AppContext.BaseDirectory, "NetCordRestImmutable.cs");
         var jsonOutputPath = Path.Combine(AppContext.BaseDirectory, "SamplerObjects.json");
-        var samplesOutput = Path.Combine(AppContext.BaseDirectory, "CodeSamples");
+        var samplesOutput = Path.Combine(AppContext.BaseDirectory, "CodeSamples/Rest");
 
         if (!Directory.Exists(samplesOutput))
             Directory.CreateDirectory(samplesOutput);
