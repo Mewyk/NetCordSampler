@@ -45,6 +45,28 @@ public static class SourceHelper
         }
     }
 
+    private static string GetAccessibility(SyntaxTokenList modifiers)
+    {
+        var isPublic = modifiers.Any(SyntaxKind.PublicKeyword);
+        var isProtected = modifiers.Any(SyntaxKind.ProtectedKeyword);
+        var isInternal = modifiers.Any(SyntaxKind.InternalKeyword);
+        var isPrivate = modifiers.Any(SyntaxKind.PrivateKeyword);
+
+        if (isPublic)
+            return "public";
+        if (isPrivate && isProtected)
+            return "private protected";
+        if (isProtected && isInternal)
+            return "protected internal";
+        if (isProtected)
+            return "protected";
+        if (isInternal)
+            return "internal";
+        if (isPrivate)
+            return "private";
+        return "internal";
+    }
+
     private static SampleClass? ExtractSampleObject(string sourceCode)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
@@ -55,16 +77,19 @@ public static class SourceHelper
             .FirstOrDefault();
 
         if (typeSyntax != null)
+        {
             return new SampleClass
             {
                 Namespace = GetNamespace(typeSyntax),
                 Name = typeSyntax.Identifier.Text,
-                Description = GetTypeDescription(typeSyntax), // Temporary
-                SourceSummary = GetTypeDescription(typeSyntax), // GetTypeSummary(typeSyntax),
+                Accessibility = GetAccessibility(typeSyntax.Modifiers),
+                Description = GetTypeDescription(typeSyntax),
+                SourceSummary = GetTypeDescription(typeSyntax),
                 LastUpdated = DateTimeOffset.UtcNow,
                 Limitations = null,
                 Properties = GetProperties(typeSyntax)
             };
+        }
 
         Console.WriteLine("Type declaration not found in the source code.");
         return null;
@@ -100,9 +125,6 @@ public static class SourceHelper
     private static string GetTypeDescription(TypeDeclarationSyntax typeSyntax) =>
         Housekeeping.ParseXmlComment(GetXmlSummary(typeSyntax));
 
-    /*private static string GetTypeSummary(TypeDeclarationSyntax typeSyntax) =>
-        GetXmlSummary(typeSyntax);*/
-
     private static string GetXmlSummary(SyntaxNode member) =>
         member
             .GetLeadingTrivia()
@@ -122,16 +144,20 @@ public static class SourceHelper
             {
                 var summaryText = GetXmlSummary(propertySyntax);
                 var parsedSummary = Housekeeping.ParseXmlComment(summaryText);
+                var isStatic = propertySyntax.Modifiers.Any(SyntaxKind.StaticKeyword);
 
                 return new SampleClass.Property
                 {
                     Name = propertySyntax.Identifier.Text,
                     Type = propertySyntax.Type.ToString(),
-                    Description = parsedSummary, // Temporary
+                    Accessibility = GetAccessibility(propertySyntax.Modifiers),
+                    IsStatic = isStatic,
+                    Description = parsedSummary,
                     SourceSummary = parsedSummary,
                     LastUpdated = DateTimeOffset.UtcNow,
                     Limitations = null
                 };
-            }).ToImmutableList();
+            })
+            .ToImmutableList();
     }
 }
