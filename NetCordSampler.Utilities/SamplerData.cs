@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace NetCordSampler.Utilities;
 
-public class SampleClass
+public class SamplerData
 {
     public string FullName =>
         string.IsNullOrEmpty(Namespace)
@@ -22,7 +22,7 @@ public class SampleClass
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public bool IsStatic { get; set; } // New property to indicate static properties
+        public bool IsStatic { get; set; }
         public string Description { get; set; } = string.Empty;
         public string SourceSummary { get; set; } = string.Empty;
         public string Accessibility { get; set; } = string.Empty;
