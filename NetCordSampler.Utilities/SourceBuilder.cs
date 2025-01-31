@@ -6,7 +6,7 @@ public static class SourceBuilder
 {
     private static readonly string[] CollectionTypes = ["IEnumerable", "IList", "ICollection", "List", "ImmutableArray"];
 
-    public static string GenerateEnum(IEnumerable<SampleClass> sampleClasses)
+    public static string GenerateEnum(IEnumerable<SamplerData> sampleClasses)
     {
         var sourceBuilder = new StringBuilder()
             .AppendLine("namespace NetCordSampler.Enums;\n")
@@ -25,7 +25,7 @@ public static class SourceBuilder
             .ToString();
     }
 
-    public static string GenerateImmutableSourceCode(IEnumerable<SampleClass> sampleClasses)
+    public static string GenerateImmutableSourceCode(IEnumerable<SamplerData> sampleClasses)
     {
         if (!sampleClasses.Any())
             return string.Empty;
@@ -57,7 +57,7 @@ public static class SourceBuilder
             .ToString();
     }
 
-    private static string BuildMainEnum(SampleClass sampleClass)
+    private static string BuildMainEnum(SamplerData sampleClass)
     {
         var enumBuilder = new StringBuilder()
             .AppendLine($"\tpublic enum {sampleClass.Name}\n\t{{");
@@ -97,7 +97,7 @@ public static class SourceBuilder
         .AppendLine("\t}")
         .ToString();
 
-    public static void GenerateSampleSourceCode(IEnumerable<SampleClass> sampleClasses, string outputDirectory)
+    public static void GenerateSampleSourceCode(IEnumerable<SamplerData> sampleClasses, string outputDirectory)
     {
         var indent = "\t";
         var classNames = new HashSet<string>(sampleClasses.Select(so => so.Name));
@@ -105,7 +105,13 @@ public static class SourceBuilder
 
         foreach (var sampleClass in sampleClasses)
         {
+            if (!string.Equals(sampleClass.Accessibility, "public", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             var className = sampleClass.Name;
+            if (string.IsNullOrEmpty(className))
+                continue;
+
             var camelCaseName = char.ToLowerInvariant(className[0]) + className[1..];
             var sourceBuilder = new StringBuilder();
 
@@ -116,7 +122,7 @@ public static class SourceBuilder
             sourceBuilder.AppendLine();
 
             // Namespace
-            sourceBuilder.AppendLine("namespace NetCordSampler.CodeSamples.RestObjects;");
+            sourceBuilder.AppendLine("namespace NetCordSampler.CodeSamples.Rest;");
             sourceBuilder.AppendLine();
 
             // Class
@@ -129,76 +135,68 @@ public static class SourceBuilder
 
             if (sampleClass.Properties != null && !sampleClass.Properties.IsEmpty)
             {
+                var assignments = new List<string>();
+
                 foreach (var property in sampleClass.Properties)
                 {
+                    if (!string.Equals(property.Accessibility, "public", StringComparison.OrdinalIgnoreCase) || property.IsStatic)
+                        continue;
+
                     var propertyName = property.Name;
                     var propertyType = property.Type.TrimEnd('?'); // Remove nullable
 
                     string? propertyAssignment = null;
 
-                    // First handle by property names
-                    if (propertyName == "Title")
-                        propertyAssignment = $"{propertyName} = \"{propertyName}\"";
-                    else if (propertyName == "Description")
+                    // Handle by property names
+                    propertyAssignment = propertyType switch
                     {
-                        // Properties.Description
-                        if (!string.IsNullOrEmpty(property.Description))
-                            propertyAssignment = $"{propertyName} = \"{property.Description}\"";
-                        else
-                            propertyAssignment = $"{propertyName} = settings.DefaultValues.MissingDescription";
-                    }
-                    else if (propertyName == "Timestamp")
-                        propertyAssignment = $"{propertyName} = DateTimeOffset.UtcNow";
-                    else if (propertyName == "Image")
-                        propertyAssignment = $"{propertyName} = settings.DefaultValues.Urls.Image";
-                    else if (propertyName == "Thumbnail")
-                        propertyAssignment = $"{propertyName} = settings.DefaultValues.Urls.Thumbnail";
-                    else if (propertyName == "Url")
-                        propertyAssignment = $"{propertyName} = settings.DefaultValues.Urls.Website";
-                    else if (propertyName == "Icon")
-                        propertyAssignment = $"{propertyName} = settings.DefaultValues.Urls.Icon";
-                    else
-                    {
-                        var (CollectionType, InnerType) = GetCollectionType(typeName: propertyType);
-
-                        if (CollectionType != null)
-                        {
-                            if (!classNames.Contains(InnerType))
-                            {
-                                propertyAssignment = $"{propertyName} = null";
-                                unknownTypes.Add(InnerType);
-                            }
-                            else
-                                propertyAssignment = $"{propertyName} = [\n\t\t\tnew {InnerType}Sample().CreateDefault(settings),\n\t\t\tnew {InnerType}Sample().CreateDefault(settings)\n\t\t]";
-                        }
-                        else if (classNames.Contains(propertyType))
-                            propertyAssignment = $"{propertyName} = new {propertyType}Sample().CreateDefault(settings)";
-                        else if (propertyType == "string")
-                            propertyAssignment = $"{propertyName} = string.Empty";
-                        else if (propertyType is "int" or "long" or "double" or "float" or "decimal")
-                            propertyAssignment = $"{propertyName} = 0";
-                        else if (propertyType == "bool")
-                            propertyAssignment = $"{propertyName} = false";
-                        else // Unknown type
-                        {
-                            propertyAssignment = $"{propertyName} = null";
-                            unknownTypes.Add(propertyType);
-                        }
-                    }
+                        "string" when propertyName.Equals("Title", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = \"{propertyName}\",",
+                        "string" when propertyName.Equals("Description", StringComparison.OrdinalIgnoreCase) =>
+                            string.IsNullOrEmpty(property.Description)
+                                ? $"{propertyName} = settings.DefaultValues.MissingDescription,"
+                                : $"{propertyName} = \"{property.Description}\",",
+                        "string" when propertyName.Equals("Text", StringComparison.OrdinalIgnoreCase) =>
+                            string.IsNullOrEmpty(property.Description)
+                                ? $"{propertyName} = settings.DefaultValues.MissingDescription,"
+                                : $"{propertyName} = \"{property.Description}\",",
+                        "DateTimeOffset" when propertyName.Equals("Timestamp", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = DateTimeOffset.UtcNow,",
+                        "string" when propertyName.Equals("Image", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Image,",
+                        "string" when propertyName.Equals("ImageUrl", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Image,",
+                        "string" when propertyName.Equals("Thumbnail", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Thumbnail,",
+                        "string" when propertyName.Equals("ThumbnailUrl", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Thumbnail,",
+                        "string" when propertyName.Equals("Url", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Website,",
+                        "string" when propertyName.Equals("Icon", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Icon,",
+                        "string" when propertyName.Equals("IconUrl", StringComparison.OrdinalIgnoreCase) =>
+                            $"{propertyName} = settings.DefaultValues.Urls.Icon,",
+                        _ => HandleGenericAssignment(property, propertyType, classNames, ref unknownTypes)
+                    };
 
                     if (propertyAssignment != null)
-                        sourceBuilder.AppendLine($"{indent}\t{propertyAssignment},");
+                        assignments.Add($"{indent}\t{propertyAssignment}");
                 }
+
+                // Remove trailing comma
+                if (assignments.Count > 0)
+                {
+                    int lastIndex = assignments.Count - 1;
+                    assignments[lastIndex] = assignments[lastIndex].TrimEnd(',');
+                }
+
+                var joinedAssignments = string.Join("\n", assignments);
+                sourceBuilder.AppendLine(joinedAssignments);
             }
 
-            // Remove trailing comma
-            if (sourceBuilder.ToString().EndsWith(",\n"))
-                sourceBuilder.Remove(sourceBuilder.Length - 2, 1);
-
             // Close CreateDefault method
-            sourceBuilder
-                .AppendLine($"{indent}}};")
-                .AppendLine();
+            sourceBuilder.AppendLine($"{indent}}};");
+            sourceBuilder.AppendLine();
 
             // IsEmpty method
             sourceBuilder.AppendLine($"{indent}public bool IsEmpty({className} {camelCaseName}) =>");
@@ -207,31 +205,46 @@ public static class SourceBuilder
                 var checks = new List<string>();
                 foreach (var property in sampleClass.Properties)
                 {
+                    if (!string.Equals(property.Accessibility, "public", StringComparison.OrdinalIgnoreCase) || property.IsStatic)
+                        continue;
+
                     var propertyName = property.Name;
                     var propertyType = property.Type.TrimEnd('?'); // Remove nullable
-                    string? check = null;
 
-                    var (CollectionType, InnerType) = GetCollectionType(typeName: propertyType);
+                    string? check = propertyType switch
+                    {
+                        "string" when propertyName.Equals("Title", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("Description", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("Text", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "DateTimeOffset" when propertyName.Equals("Timestamp", StringComparison.OrdinalIgnoreCase) =>
+                            $"{camelCaseName}.{propertyName} == default",
+                        "string" when propertyName.Equals("Image", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("Thumbnail", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("Url", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("Icon", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        "string" when propertyName.Equals("IconUrl", StringComparison.OrdinalIgnoreCase) =>
+                            $"string.IsNullOrEmpty({camelCaseName}.{propertyName})",
+                        _ => HandleGenericCheck(property, propertyType, camelCaseName, classNames)
+                    };
 
-                    if (CollectionType != null)
-                        check = classNames.Contains(InnerType) 
-                            ? $"!{camelCaseName}.{propertyName}.Any()" 
-                            : $"{camelCaseName}.{propertyName} == null";
-                    else if (propertyType == "string")
-                        check = $"string.IsNullOrEmpty({camelCaseName}.{propertyName})";
-                    else if (propertyType is "int" or "long" or "double" or "float" or "decimal")
-                        check = $"{camelCaseName}.{propertyName} == 0";
-                    else if (propertyType == "bool")
-                        check = $"!{camelCaseName}.{propertyName}";
-                    else if (classNames.Contains(propertyType))
-                        check = $"{camelCaseName}.{propertyName} == null";
-                    else
-                        check = $"{camelCaseName}.{propertyName} == null";
-
-                    checks.Add(check);
+                    if (check != null)
+                        checks.Add(check);
                 }
 
-                sourceBuilder.AppendLine($"{indent}\t" + string.Join(" &&\n\t", checks) + ";");
+                if (checks.Count != 0)
+                {
+                    var indentForChecks = $"{indent}\t";
+                    var joinedChecks = string.Join($" &&\n{indentForChecks}", checks);
+                    sourceBuilder.AppendLine($"{indent}\t{joinedChecks};");
+                }
+                else sourceBuilder.AppendLine($"{indent}\ttrue;");
             }
             else sourceBuilder.AppendLine($"{indent}\ttrue;");
 
@@ -243,11 +256,67 @@ public static class SourceBuilder
         }
     }
 
-    private static (string? CollectionType, string InnerType) GetCollectionType(string typeName) => 
-        typeName.IndexOf('<') > 0 && 
-        typeName.LastIndexOf('>') > typeName.IndexOf('<') && 
+    private static string? HandleGenericAssignment(SamplerData.Property property, string propertyType, HashSet<string> classNames, ref HashSet<string> unknownTypes)
+    {
+        var (CollectionType, InnerType) = GetCollectionType(propertyType);
+
+        if (CollectionType != null)
+        {
+            if (!classNames.Contains(InnerType))
+            {
+                unknownTypes.Add(InnerType);
+                return $"{property.Name} = null,";
+            }
+            else
+            {
+                return $"{property.Name} = new List<{InnerType}>()\n\t\t\t{{\n\t\t\t\tnew {InnerType}Sample().CreateDefault(settings),\n\t\t\t\tnew {InnerType}Sample().CreateDefault(settings)\n\t\t\t}},";
+            }
+        }
+        else if (classNames.Contains(propertyType))
+        {
+            return $"{property.Name} = new {propertyType}Sample().CreateDefault(settings),";
+        }
+        else
+        {
+            return propertyType switch
+            {
+                "string" => $"{property.Name} = string.Empty,",
+                "int" or "long" or "double" or "float" or "decimal" => $"{property.Name} = 0,",
+                "bool" => $"{property.Name} = false,",
+                _ => $"{property.Name} = null,"
+            };
+        }
+    }
+
+    private static string? HandleGenericCheck(
+        SamplerData.Property property, 
+        string propertyType, 
+        string camelCaseName, 
+        HashSet<string> classNames)
+    {
+        var (CollectionType, InnerType) = GetCollectionType(propertyType);
+
+        if (CollectionType != null)
+            return classNames.Contains(InnerType)
+                ? $"!{camelCaseName}.{property.Name}.Any()"
+                : $"{camelCaseName}.{property.Name} == null";
+        else if (propertyType == "string")
+            return $"string.IsNullOrEmpty({camelCaseName}.{property.Name})";
+        else if (propertyType is "int" or "long" or "double" or "float" or "decimal")
+            return $"{camelCaseName}.{property.Name} == 0";
+        else if (propertyType == "bool")
+            return $"!{camelCaseName}.{property.Name}";
+        else if (classNames.Contains(propertyType))
+            return $"{camelCaseName}.{property.Name} == null";
+        else
+            return $"{camelCaseName}.{property.Name} == null";
+    }
+
+    private static (string? CollectionType, string InnerType) GetCollectionType(string typeName) =>
+        typeName.Contains('<') && typeName.Contains('>') &&
         CollectionTypes.Contains(typeName[..typeName.IndexOf('<')])
-            ? ((string? CollectionType, string InnerType))(typeName[..typeName.IndexOf('<')], 
-                typeName[(typeName.IndexOf('<') + 1)..typeName.LastIndexOf('>')])
-            : ((string? CollectionType, string InnerType))(null, string.Empty);
+            ? (typeName[..typeName.IndexOf('<')],
+                typeName.Substring(typeName.IndexOf('<') + 1, 
+                typeName.LastIndexOf('>') - typeName.IndexOf('<') - 1))
+            : (null, string.Empty);
 }
