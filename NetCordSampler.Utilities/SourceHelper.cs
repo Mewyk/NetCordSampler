@@ -10,7 +10,7 @@ public static class SourceHelper
 {
     private static readonly HttpClient httpClient = new();
 
-    public static async Task<ImmutableArray<SampleClass>> GetSampleObjectsAsync(IEnumerable<string> fileNames)
+    public static async Task<ImmutableArray<SamplerData>> GetSampleObjectsAsync(IEnumerable<string> fileNames)
     {
         var tasks = fileNames.Select(async fileName =>
         {
@@ -67,7 +67,7 @@ public static class SourceHelper
         return "internal";
     }
 
-    private static SampleClass? ExtractSampleObject(string sourceCode)
+    private static SamplerData? ExtractSampleObject(string sourceCode)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
         var rootNode = syntaxTree.GetRoot();
@@ -78,7 +78,7 @@ public static class SourceHelper
 
         if (typeSyntax != null)
         {
-            return new SampleClass
+            return new SamplerData
             {
                 Namespace = GetNamespace(typeSyntax),
                 Name = typeSyntax.Identifier.Text,
@@ -136,17 +136,18 @@ public static class SourceHelper
             .Select(element => element.Content.ToString())
             .FirstOrDefault() ?? string.Empty;
 
-    private static ImmutableList<SampleClass.Property>? GetProperties(TypeDeclarationSyntax typeSyntax)
+    private static ImmutableList<SamplerData.Property>? GetProperties(TypeDeclarationSyntax typeSyntax)
     {
         return typeSyntax.Members
             .OfType<PropertyDeclarationSyntax>()
+            .Where(prop => prop.AccessorList != null && prop.AccessorList.Accessors.Any(a => a.Kind() == SyntaxKind.SetAccessorDeclaration))
             .Select(propertySyntax =>
             {
                 var summaryText = GetXmlSummary(propertySyntax);
                 var parsedSummary = Housekeeping.ParseXmlComment(summaryText);
                 var isStatic = propertySyntax.Modifiers.Any(SyntaxKind.StaticKeyword);
 
-                return new SampleClass.Property
+                return new SamplerData.Property
                 {
                     Name = propertySyntax.Identifier.Text,
                     Type = propertySyntax.Type.ToString(),

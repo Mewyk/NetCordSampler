@@ -11,6 +11,6 @@ public static class JsonGenerator
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static string GenerateJson(List<SampleClass> sampleObjects) => 
+    public static string GenerateJson(List<SamplerData> sampleObjects) => 
         JsonSerializer.Serialize(sampleObjects, jsonOptions);
 }
