@@ -35,14 +35,14 @@ public class CoreCommandModule(
             ApplicationCommandInteractionDataOption option,
             AutocompleteInteractionContext context)
         {
-            var sampleNames = SampleHelper.FindSamples(option.Value!, 0, 25, out var total);
+            var sampleNames = SampleHelper.FindSamples(option.Value!).Take(25);
             var choices = sampleNames.Select(name =>
             {
                 string displayName = name.Length > 90 ? name[..90] : name;
                 return new ApplicationCommandOptionChoiceProperties(displayName, name);
             });
 
-            return new ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(choices);
+            return new(choices);
         }
     }
 }

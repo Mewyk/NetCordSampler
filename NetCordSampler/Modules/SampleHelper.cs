@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json;
-
 using NetCord.Rest;
 
 using NetCordSampler.CodeSamples;
@@ -72,18 +71,14 @@ public static class SampleHelper
         Samples = sampleList;
     }
 
-    public static IEnumerable<string> FindSamples(
-            string value, int skip, int limit, out int total)
+    public static IEnumerable<string> FindSamples(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var filteredNames = Samples
-            .Where(sample => sample.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(sample => sample.Name.IndexOf(value, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(sample => sample.Name)
-            .Select(sample => sample.Name);
-
-        total = filteredNames.Count();
-        return filteredNames.Skip(skip).Take(limit);
+        return Samples
+            .Select(s => s.Name)
+            .Where(n => n.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(n => n.IndexOf(value, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(n => n);
     }
 }
