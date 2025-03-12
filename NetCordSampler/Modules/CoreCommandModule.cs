@@ -9,8 +9,8 @@ using NetCordSampler.CodeSamples;
 namespace NetCordSampler.Modules;
 
 public class CoreCommandModule(
-    IOptions<Configuration> settings, Builder builder) 
-    : ApplicationCommandModule<ApplicationCommandContext>
+    IOptions<Configuration> settings, Builder builder
+)   : ApplicationCommandModule<ApplicationCommandContext>
 {
     private readonly SamplerSettings _settings = settings.Value.Sampler;
     private readonly Builder _builder = builder;
