@@ -398,3 +398,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+NetCordSampler/appsettings.Development.json
+NetCordSampler/Properties/launchSettings.json
+/External
+NetCordSampler/SamplerTypes.json
