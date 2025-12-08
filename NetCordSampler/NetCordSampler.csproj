@@ -2,9 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,27 +13,35 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="SamplerObjects.json">
+    <None Update="appsettings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
-    <PackageReference Include="NetCord" Version="1.0.0-alpha.338" />
-    <PackageReference Include="NetCord.Hosting" Version="1.0.0-alpha.338" />
-    <PackageReference Include="NetCord.Hosting.Services" Version="1.0.0-alpha.338" />
+    <AdditionalFiles Include="SamplerTypes.json" />
+    <AdditionalFiles Include="appsettings.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CodeSamples\Gateway\" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="NetCord" Version="1.0.0-alpha.450" />
+    <PackageReference Include="NetCord.Hosting" Version="1.0.0-alpha.450" />
+    <PackageReference Include="NetCord.Hosting.Services" Version="1.0.0-alpha.450" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetCordSampler.Generators\NetCordSampler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\NetCordSampler.Shared\NetCordSampler.Shared.csproj" />
+  </ItemGroup>
+
+  <Target Name="RunMetadataExtractor" BeforeTargets="BeforeBuild">
+    <Message Text="Running NetCord Metadata Extractor..." Importance="high" />
+    <Exec Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)..\NetCordSampler.MetadataExtractor\NetCordSampler.MetadataExtractor.csproj&quot; -- &quot;$(MSBuildThisFileDirectory)SamplerTypes.json&quot;" />
+  </Target>
 
 </Project>
