@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="NetCordSampler.Generators/NetCordSampler.Generators.csproj" />
+  <Project Path="NetCordSampler.MetadataExtractor/NetCordSampler.MetadataExtractor.csproj" />
+  <Project Path="NetCordSampler/NetCordSampler.csproj" />
+</Solution>
